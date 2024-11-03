@@ -1,0 +1,143 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: centos:7.6-dev
+    container_name: nginx
+    networks:
+      doris_network:
+        ipv4_address: 172.29.0.10
+    ports:
+      - "8030:8030"
+      - "9030:9030"
+    volumes:
+      - /opt/nginx-1.18.0.tar.gz:/opt/nginx-1.18.0.tar.gz
+    command: tail -f /dev/null
+
+  fe-1:
+    image: centos:7.6-dev
+    container_name: fe-1
+    networks:
+      doris_network:
+        ipv4_address: 172.29.0.11
+    volumes:
+      - /opt/doris-2.1.6.tar.gz:/opt/doris-2.1.6.tar.gz
+      - /opt/jdk8.tar.gz:/opt/jdk8.tar.gz
+      - /opt/install_jdk.sh:/opt/install_jdk.sh
+      - /opt/set_hostname.sh:/opt/set_hostname.sh
+      - /opt/add_hosts.sh:/opt/add_hosts.sh
+      - /opt/doris_prepare.sh:/opt/doris_prepare.sh
+    command: tail -f /dev/null
+
+  fe-2:
+    image: centos:7.6-dev
+    container_name: fe-2
+    networks:
+      doris_network:
+        ipv4_address: 172.29.0.12
+    volumes:
+      - /opt/doris-2.1.6.tar.gz:/opt/doris-2.1.6.tar.gz
+      - /opt/jdk8.tar.gz:/opt/jdk8.tar.gz
+      - /opt/install_jdk.sh:/opt/install_jdk.sh
+      - /opt/set_hostname.sh:/opt/set_hostname.sh
+      - /opt/add_hosts.sh:/opt/add_hosts.sh
+      - /opt/doris_prepare.sh:/opt/doris_prepare.sh
+    command: tail -f /dev/null
+
+  fe-3:
+    image: centos:7.6-dev
+    container_name: fe-3
+    networks:
+      doris_network:
+        ipv4_address: 172.29.0.13
+    volumes:
+      - /opt/doris-2.1.6.tar.gz:/opt/doris-2.1.6.tar.gz
+      - /opt/jdk8.tar.gz:/opt/jdk8.tar.gz
+      - /opt/install_jdk.sh:/opt/install_jdk.sh
+      - /opt/set_hostname.sh:/opt/set_hostname.sh
+      - /opt/add_hosts.sh:/opt/add_hosts.sh
+      - /opt/doris_prepare.sh:/opt/doris_prepare.sh
+    command: tail -f /dev/null
+
+  be-1:
+    image: centos:7.6-dev
+    container_name: be-1
+    networks:
+      doris_network:
+        ipv4_address: 172.29.0.14
+    volumes:
+      - /opt/doris-2.1.6.tar.gz:/doris-2.1.6.tar.gz
+      - /opt/jdk8.tar.gz:/opt/jdk8.tar.gz
+      - /opt/install_jdk.sh:/opt/install_jdk.sh
+      - /opt/set_hostname.sh:/opt/set_hostname.sh
+      - /opt/add_hosts.sh:/opt/add_hosts.sh
+      - /opt/doris_prepare.sh:/opt/doris_prepare.sh
+    command: tail -f /dev/null
+
+  be-2:
+    image: centos:7.6-dev
+    container_name: be-2
+    networks:
+      doris_network:
+        ipv4_address: 172.29.0.15
+    volumes:
+      - /opt/doris-2.1.6.tar.gz:/opt/doris-2.1.6.tar.gz
+      - /opt/jdk8.tar.gz:/opt/jdk8.tar.gz
+      - /opt/install_jdk.sh:/opt/install_jdk.sh
+      - /opt/set_hostname.sh:/opt/set_hostname.sh
+      - /opt/add_hosts.sh:/opt/add_hosts.sh
+      - /opt/doris_prepare.sh:/opt/doris_prepare.sh
+    command: tail -f /dev/null
+
+  be-3:
+    image: centos:7.6-dev
+    container_name: be-3
+    networks:
+      doris_network:
+        ipv4_address: 172.29.0.16
+    volumes:
+      - /opt/doris-2.1.6.tar.gz:/opt/doris-2.1.6.tar.gz
+      - /opt/jdk8.tar.gz:/opt/jdk8.tar.gz
+      - /opt/install_jdk.sh:/opt/install_jdk.sh
+      - /opt/set_hostname.sh:/opt/set_hostname.sh
+      - /opt/add_hosts.sh:/opt/add_hosts.sh
+      - /opt/doris_prepare.sh:/opt/doris_prepare.sh
+    command: tail -f /dev/null
+
+  be-4:
+    image: centos:7.6-dev
+    container_name: be-4
+    networks:
+      doris_network:
+        ipv4_address: 172.29.0.17
+    volumes:
+      - /opt/doris-2.1.6.tar.gz:/opt/doris-2.1.6.tar.gz
+      - /opt/jdk8.tar.gz:/opt/jdk8.tar.gz
+      - /opt/install_jdk.sh:/opt/install_jdk.sh
+      - /opt/set_hostname.sh:/opt/set_hostname.sh
+      - /opt/add_hosts.sh:/opt/add_hosts.sh
+      - /opt/doris_prepare.sh:/opt/doris_prepare.sh
+    command: tail -f /dev/null
+
+  be-5:
+    image: centos:7.6-dev
+    container_name: be-5
+    networks:
+      doris_network:
+        ipv4_address: 172.29.0.18
+    volumes:
+      - /opt/doris-2.1.6.tar.gz:/opt/doris-2.1.6.tar.gz
+      - /opt/jdk8.tar.gz:/opt/jdk8.tar.gz
+      - /opt/install_jdk.sh:/opt/install_jdk.sh
+      - /opt/set_hostname.sh:/opt/set_hostname.sh
+      - /opt/add_hosts.sh:/opt/add_hosts.sh
+      - /opt/doris_prepare.sh:/opt/doris_prepare.sh
+    command: tail -f /dev/null
+
+networks:
+  doris_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.29.0.0/16
