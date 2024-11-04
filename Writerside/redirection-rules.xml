@@ -14,4 +14,8 @@
         <description>Created after removal of "容器准备" from Doris</description>
         <accepts>container_prepare.html</accepts>
     </rule>
+    <rule id="2588b8b9">
+        <description>Created after removal of "Starter" from Doris</description>
+        <accepts>starter.html</accepts>
+    </rule>
 </rules>

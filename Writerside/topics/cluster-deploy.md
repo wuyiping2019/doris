@@ -1,18 +1,29 @@
+<show-structure depth="2"/>
+
 # 集群启动
+
+手动进行doris集群部署步骤如下：    
+1.规划服务器的节点角色；  
+2.设置/etc/hosts和/etc/hostname；（开启fqdn）  
+3.所有的fe和be节点安装jdk、下载并解压指定版本的doris二进制包；  
+4.配置fe master，启动fe master节点，将规划的节点的follower和be全部注册到fe master上；  
+5.配置fe和be，逐个启动fe和be；  
+6.登录fe master查看fe和be节点的状态；  
+7.启动nginx服务，反向代理多个fe；
 
 ## 1.节点划分
 
-| ID | IP          | 节点    | 主机名         |
-|----|-------------|-------|-------------|
-| 1  | 172.29.0.10 | Nginx | dorix-proxy |
-| 2  | 172.29.0.11 | FE    | fe-1        |
-| 3  | 172.29.0.12 | FE    | fe-2        |
-| 4  | 172.29.0.13 | FE    | fe-3        |
-| 5  | 172.29.0.14 | BE    | be-1        |
-| 6  | 172.29.0.15 | BE    | be-2        |
-| 7  | 172.29.0.16 | BE    | be-3        |
-| 8  | 172.29.0.17 | BE    | be-4        |
-| 9  | 172.29.0.18 | BE    | be-5        |
+| ID | IP          | 节点    | 主机名         | 角色       |
+|----|-------------|-------|-------------|----------|
+| 1  | 172.29.0.10 | Nginx | dorix-proxy |          |
+| 2  | 172.29.0.11 | FE    | fe-1        | master   |
+| 3  | 172.29.0.12 | FE    | fe-2        | follower |
+| 4  | 172.29.0.13 | FE    | fe-3        | follower |
+| 5  | 172.29.0.14 | BE    | be-1        |          |
+| 6  | 172.29.0.15 | BE    | be-2        |          |
+| 7  | 172.29.0.16 | BE    | be-3        |          |
+| 8  | 172.29.0.17 | BE    | be-4        |          |
+| 9  | 172.29.0.18 | BE    | be-5        |          |
 
 ## 2.脚本准备
 
@@ -129,21 +140,20 @@ cat /etc/hosts | tail -n 9  # 显示最后四行，以确认写入的内容
 ```shell
 #!/bin/bash
 cd /opt
-source set_hostname.sh 
-source add_hosts.sh
-source install_jdk.sh
+source ./set_hostname.sh 
+source ./add_hosts.sh
 
 # 关系交换内存
 echo "关闭交换内存..."
 swapoff -a
 # 关闭防火墙
-echo "停止防火墙服务..."
-systemctl stop firewalld.service
-systemctl disable firewalld.service
+# echo "停止防火墙服务..."
+# systemctl stop firewalld.service
+# systemctl disable firewalld.service
 # 配置 NTP 服务
-echo "启动并启用 NTP 服务..."
-systemctl start ntpd.service
-systemctl enable ntpd.service
+# echo "启动并启用 NTP 服务..."
+# systemctl start ntpd.service
+# systemctl enable ntpd.service
 # 设置系统最大打开文件句柄数
 echo "设置最大打开文件句柄数..."
 {  
@@ -154,25 +164,40 @@ echo "设置最大打开文件句柄数..."
 echo "设置 vm.max_map_count..."
 sysctl -w vm.max_map_count=2000000
 # 关闭透明大页
-echo "关闭透明大页..."
-echo never > /sys/kernel/mm/transparent_hugepage/enabled
-echo never > /sys/kernel/mm/transparent_hugepage/defrag
+# echo "关闭透明大页..."
+#echo never > /sys/kernel/mm/transparent_hugepage/enabled
+#echo never > /sys/kernel/mm/transparent_hugepage/defrag
 # 确认设置
 echo "设置完成，当前配置："
 echo "最大打开文件句柄数:"
 cat /etc/security/limits.conf | tail -n 9
 echo "vm.max_map_count:"
 sysctl vm.max_map_count
-echo "透明大页设置:"
-cat /sys/kernel/mm/transparent_hugepage/enabledcat /sys/kernel/mm/transparent_hugepage/defrag
-
-tar -zxvf ./doris-2.doris-2.1.6.tar.gz1.6.tar.gz
+# echo "透明大页设置:"
+# cat /sys/kernel/mm/transparent_hugepage/enabledcat /sys/kernel/mm/transparent_hugepage/defrag
 ```
 
-## 3.容器
-### 3.1 Dockerfile
+## 3.目录结构
+
+创建一个doris目录，用于保存相关的资源和脚本文件  
+opt
+
+├── doris  
+│ ├── doris-2.1.6.tar.gz
+│ ├── jdk8.tar.gz
+│ ├── doris_prepare.sh   
+│ ├── install_jdk.sh    
+│ ├── set_hostname.sh  
+│ ├── Dockerfile   
+│ ├── docker-compose.yaml
+
+## 4.容器
+
+### 4.1 镜像
 
 为了在测试环境进行Doris的分布式部署，使用docker容模拟出多台服务器进行手动部署。
+
+#### 4.1.1 Dockerfile
 
 ```Docker
 FROM centos:7.6.1810
@@ -192,19 +217,41 @@ RUN yum install -y \
 
 
 WORKDIR /opt
+
+COPY doris-2.1.6.tar.gz /opt/doris-2.1.6.tar.gz 
+
+COPY set_hostname.sh /opt/set_hostname.sh
+
+COPY add_hosts.sh /opt/add_hosts.sh
+
+COPY install_jdk.sh /opt/install_jdk.sh
+
+COPY doris_prepare.sh /opt/doris_prepare.sh
+
+COPY jdk8.tar.gz /opt/jdk8.gz
+
+RUN tar -zxvf doris-2.1.6.tar.gz
+RUN bash install_jdk.sh
+
+
 ```
+
+#### 4.1.2 build
 
 ```shell
 docker build -t centos:7.6- dev .
 ```
 
-### 3.2 容器启动
+### 4.2 容器启动
+
+#### 4.2.1 docker-compose.yaml
+
 ```Docker
 version: '3.8'
 
 services:
   nginx:
-    image: centos:7.6-dev
+    image: nginx:latest
     privileged: true
     container_name: nginx
     networks:
@@ -214,7 +261,6 @@ services:
       - "8030:8030"
       - "9030:9030"
     volumes:
-      - /opt/nginx-1.18.0.tar.gz:/opt/nginx-1.18.0.tar.gz
       - /opt/default.conf:/etc/nginx/conf.d/default.conf
     command: bash -c "nginx -c /etc/nginx/conf.d/default.conf && tail -f /dev/null"
 
@@ -225,14 +271,7 @@ services:
     networks:
       doris_network:
         ipv4_address: 172.29.0.11
-    volumes:
-      - /opt/doris-2.1.6.tar.gz:/opt/doris-2.1.6.tar.gz
-      - /opt/jdk8.tar.gz:/opt/jdk8.tar.gz
-      - /opt/install_jdk.sh:/opt/install_jdk.sh
-      - /opt/set_hostname.sh:/opt/set_hostname.sh
-      - /opt/add_hosts.sh:/opt/add_hosts.sh
-      - /opt/doris_prepare.sh:/opt/doris_prepare.sh
-    command: bash -c "sh doris_prepare.sh && cd apache-doris-2.1.6-bin-x64/bin && sh start_fe.sh"
+    command: bash -c "tail -f /dev/null"
 
 
   fe-2:
@@ -242,14 +281,7 @@ services:
     networks:
       doris_network:
         ipv4_address: 172.29.0.12
-    volumes:
-      - /opt/doris-2.1.6.tar.gz:/opt/doris-2.1.6.tar.gz
-      - /opt/jdk8.tar.gz:/opt/jdk8.tar.gz
-      - /opt/install_jdk.sh:/opt/install_jdk.sh
-      - /opt/set_hostname.sh:/opt/set_hostname.sh
-      - /opt/add_hosts.sh:/opt/add_hosts.sh
-      - /opt/doris_prepare.sh:/opt/doris_prepare.sh
-    command: bash -c "sh doris_prepare.sh && cd apache-doris-2.1.6-bin-x64/bin && sh start_fe.sh --helper 172.29.0.11:9010"
+    command: bash -c "tail -f /dev/null"
 
   fe-3:
     image: centos:7.6-dev
@@ -258,14 +290,7 @@ services:
     networks:
       doris_network:
         ipv4_address: 172.29.0.13
-    volumes:
-      - /opt/doris-2.1.6.tar.gz:/opt/doris-2.1.6.tar.gz
-      - /opt/jdk8.tar.gz:/opt/jdk8.tar.gz
-      - /opt/install_jdk.sh:/opt/install_jdk.sh
-      - /opt/set_hostname.sh:/opt/set_hostname.sh
-      - /opt/add_hosts.sh:/opt/add_hosts.sh
-      - /opt/doris_prepare.sh:/opt/doris_prepare.sh
-    command: bash -c "sh doris_prepare.sh && cd apache-doris-2.1.6-bin-x64/bin && sh start_fe.sh --helper 172.29.0.11:9010"
+    command: bash -c "tail -f /dev/null"
 
   be-1:
     image: centos:7.6-dev
@@ -274,13 +299,6 @@ services:
     networks:
       doris_network:
         ipv4_address: 172.29.0.14
-    volumes:
-      - /opt/doris-2.1.6.tar.gz:/doris-2.1.6.tar.gz
-      - /opt/jdk8.tar.gz:/opt/jdk8.tar.gz
-      - /opt/install_jdk.sh:/opt/install_jdk.sh
-      - /opt/set_hostname.sh:/opt/set_hostname.sh
-      - /opt/add_hosts.sh:/opt/add_hosts.sh
-      - /opt/doris_prepare.sh:/opt/doris_prepare.sh
     command: tail -f /dev/null
 
   be-2:
@@ -290,13 +308,6 @@ services:
     networks:
       doris_network:
         ipv4_address: 172.29.0.15
-    volumes:
-      - /opt/doris-2.1.6.tar.gz:/opt/doris-2.1.6.tar.gz
-      - /opt/jdk8.tar.gz:/opt/jdk8.tar.gz
-      - /opt/install_jdk.sh:/opt/install_jdk.sh
-      - /opt/set_hostname.sh:/opt/set_hostname.sh
-      - /opt/add_hosts.sh:/opt/add_hosts.sh
-      - /opt/doris_prepare.sh:/opt/doris_prepare.sh
     command: tail -f /dev/null
 
   be-3:
@@ -306,13 +317,6 @@ services:
     networks:
       doris_network:
         ipv4_address: 172.29.0.16
-    volumes:
-      - /opt/doris-2.1.6.tar.gz:/opt/doris-2.1.6.tar.gz
-      - /opt/jdk8.tar.gz:/opt/jdk8.tar.gz
-      - /opt/install_jdk.sh:/opt/install_jdk.sh
-      - /opt/set_hostname.sh:/opt/set_hostname.sh
-      - /opt/add_hosts.sh:/opt/add_hosts.sh
-      - /opt/doris_prepare.sh:/opt/doris_prepare.sh
     command: tail -f /dev/null
 
   be-4:
@@ -322,13 +326,6 @@ services:
     networks:
       doris_network:
         ipv4_address: 172.29.0.17
-    volumes:
-      - /opt/doris-2.1.6.tar.gz:/opt/doris-2.1.6.tar.gz
-      - /opt/jdk8.tar.gz:/opt/jdk8.tar.gz
-      - /opt/install_jdk.sh:/opt/install_jdk.sh
-      - /opt/set_hostname.sh:/opt/set_hostname.sh
-      - /opt/add_hosts.sh:/opt/add_hosts.sh
-      - /opt/doris_prepare.sh:/opt/doris_prepare.sh
     command: tail -f /dev/null
 
   be-5:
@@ -338,13 +335,6 @@ services:
     networks:
       doris_network:
         ipv4_address: 172.29.0.18
-    volumes:
-      - /opt/doris-2.1.6.tar.gz:/opt/doris-2.1.6.tar.gz
-      - /opt/jdk8.tar.gz:/opt/jdk8.tar.gz
-      - /opt/install_jdk.sh:/opt/install_jdk.sh
-      - /opt/set_hostname.sh:/opt/set_hostname.sh
-      - /opt/add_hosts.sh:/opt/add_hosts.sh
-      - /opt/doris_prepare.sh:/opt/doris_prepare.sh
     command: tail -f /dev/null
 
 networks:
@@ -357,21 +347,140 @@ networks:
 
 ```
 
-## 4.目录结构
+#### 4.2.2 启动容器
 
-创建一个doris目录，用于保存相关的资源和脚本文件  
-opt  
-├── jdk8.tar.gz   
-├── doris-2.1.6.tar.gz  
-├── doris_prepare.sh   
-├── install_jdk.sh    
-├── set_hostname.sh  
-├── doris
-│ ├── Dockerfile  
-│ ├── docker-compose.yaml   
-
-### 5.启动
 ```shell
+# 启动9个容器 模拟集群
 docker compose up -d
 ```
 
+## 5 启动FE和BE
+
+### 5.1 启动FE Master
+
+```shell
+# 进入容器
+docker exec -it fe-1 bash
+sh doris_prepare.sh
+cd /opt/apache-doris-2.1.6-bin-x64/fe/conf
+cat <<EOF >> fe.conf
+enable_fqdn_mode = true
+EOF
+
+cd /opt/apache-doris-2.1.6-bin-x64/fe/bin
+sh start_fe.sh --daemon
+# 退出容器
+exit
+# 登录FE 密码空字符串
+mysql -uroot -P9030 -h172.29.0.11 -p
+# 查看内部数据
+show databases; 
+# 查看FE 只有当前一个FE
+show frontends;
+# 查看BE 没有BE
+show backends;
+```
+
+### 5.2 注册FE Follower和BE
+
+```shell
+mysql -uroot -P9030 -h172.29.0.11 -p
+alter system add follower "fe-2:9010";
+alter system add follower "fe-3:9010";
+
+alter system add backend "be-1:9050";
+alter system add backend "be-2:9050";
+alter system add backend "be-3:9050";
+alter system add backend "be-4:9050";
+alter system add backend "be-5:9050";
+
+# 查看FE和BE
+# 除了FE Master外 其他的节点的Alive字段都处于false状态
+show frontends;
+show backends;
+
+```
+
+### 5.3 启动FE Follower
+
+以启动fe-2为例
+
+```shell
+docker exec -it fe-2 bash
+sh doris_prepare.sh
+cd /opt/apache-doris-2.1.6-bin-x64/fe/conf
+cat <<EOF >> fe.conf
+enable_fqdn_mode = true
+EOF
+cd /opt/apache-doris-2.1.6-bin-x64/fe/bin
+sh start_fe.sh --helper "fe-1:9050" --daemon
+```
+
+### 5.4 启动BE
+
+以启动be-1为例。
+
+```shell
+docker exec -it be-1 bash
+sh doris_prepare.sh
+cd /opt/apache-doris-2.1.6-bin-x64/be/bin
+sh start_fe.sh --daemon
+```
+
+## 6.启动Nginx
+
+### 6.1 nginx配置
+
+使用Ngxin进行反向代理多个FE，自动进行负载均衡。
+
+```shell
+#user  nobody;
+worker_processes  1;
+
+# 日志文件路径和其他配置
+#error_log  logs/error.log;
+#error_log  logs/error.log  notice;
+#error_log  logs/error.log  info;
+
+#pid        logs/nginx.pid;
+
+events {
+    worker_connections  1024;
+}
+
+
+# Stream 块用于处理 TCP/UDP 代理负载均衡
+stream {
+    upstream mysqld {
+        hash $remote_addr consistent;
+        server 172.29.0.11:9030 weight=1 max_fails=2 fail_timeout=60s;
+        server 172.29.0.12:9030 weight=1 max_fails=2 fail_timeout=60s;
+        server 172.29.0.13:9030 weight=1 max_fails=2 fail_timeout=60s;
+    }
+
+    server {
+        listen 6030;
+        proxy_connect_timeout 300s;
+        proxy_timeout 300s;
+        proxy_pass mysqld;
+    }
+}
+```
+
+### 6.2 访问nginx
+
+```shell
+(base) [root@VM-8-10-centos doris]# mysql -uroot -P9030 -h172.29.0.10 -p
+Enter password:
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+
+Your MySQL connection id is 0
+Server version: 5.7.99
+
+Copyright (c) 2000, 2018, Oracle, MariaDB Corporation Ab and others.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+MySQL [(none)]>
+
+```
