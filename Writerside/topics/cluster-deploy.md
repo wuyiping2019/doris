@@ -435,8 +435,8 @@ sh start_fe.sh --daemon
 
 ```shell
 #user  nobody;
-worker_processes  1;
 
+worker_processes  1;
 # 日志文件路径和其他配置
 #error_log  logs/error.log;
 #error_log  logs/error.log  notice;
@@ -448,6 +448,24 @@ events {
     worker_connections  1024;
 }
 
+# HTTP 块
+http {
+    # 上游服务器组
+    upstream backend_servers {
+        server 172.29.0.11:8030;
+        server 172.29.0.12:8030;
+        server 172.29.0.13:8030;
+    }
+
+    # HTTP 服务器配置
+    server {
+        listen 8030;
+
+        location / {
+            proxy_pass http://backend_servers;
+        }
+    }
+}
 
 # Stream 块用于处理 TCP/UDP 代理负载均衡
 stream {
@@ -459,7 +477,7 @@ stream {
     }
 
     server {
-        listen 6030;
+        listen 9030;
         proxy_connect_timeout 300s;
         proxy_timeout 300s;
         proxy_pass mysqld;
