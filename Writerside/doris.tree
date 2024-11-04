@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE instance-profile
+        SYSTEM "https://resources.jetbrains.com/writerside/1.0/product-profile.dtd">
+
+<instance-profile id="doris"
+                 name="doris"
+                 start-page="doris_install.md">
+    <toc-element topic="doris_document.md">
+        <toc-element topic="doris_install.md">
+            <toc-element topic="resource_download.md"/>
+            <toc-element topic="fe_deploy.md"/>
+            <toc-element topic="be_deploy.md"/>
+            <toc-element topic="cluster-deploy.md"/>
+        </toc-element>
+    </toc-element>
+</instance-profile>
