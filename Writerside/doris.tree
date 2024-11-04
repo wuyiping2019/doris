@@ -13,4 +13,7 @@
             <toc-element topic="cluster-deploy.md"/>
         </toc-element>
     </toc-element>
+    <toc-element topic="operate.md">
+        <toc-element topic="访问.md"/>
+    </toc-element>
 </instance-profile>
