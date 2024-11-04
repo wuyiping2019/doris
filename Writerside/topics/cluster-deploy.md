@@ -254,6 +254,8 @@ services:
     image: nginx:latest
     privileged: true
     container_name: nginx
+    environment:
+      - TZ=Asia/Shanghai  # 设置时区为上海
     networks:
       doris_network:
         ipv4_address: 172.29.0.10
@@ -268,6 +270,8 @@ services:
     image: centos:7.6-dev
     privileged: true
     container_name: fe-1
+    environment:
+      - TZ=Asia/Shanghai  # 设置时区为上海
     networks:
       doris_network:
         ipv4_address: 172.29.0.11
@@ -278,6 +282,8 @@ services:
     image: centos:7.6-dev
     privileged: true
     container_name: fe-2
+    environment:
+      - TZ=Asia/Shanghai  # 设置时区为上海
     networks:
       doris_network:
         ipv4_address: 172.29.0.12
@@ -287,6 +293,8 @@ services:
     image: centos:7.6-dev
     privileged: true
     container_name: fe-3
+    environment:
+      - TZ=Asia/Shanghai  # 设置时区为上海
     networks:
       doris_network:
         ipv4_address: 172.29.0.13
@@ -296,6 +304,8 @@ services:
     image: centos:7.6-dev
     privileged: true
     container_name: be-1
+    environment:
+      - TZ=Asia/Shanghai  # 设置时区为上海
     networks:
       doris_network:
         ipv4_address: 172.29.0.14
@@ -305,6 +315,8 @@ services:
     image: centos:7.6-dev
     privileged: true
     container_name: be-2
+    environment:
+      - TZ=Asia/Shanghai  # 设置时区为上海
     networks:
       doris_network:
         ipv4_address: 172.29.0.15
@@ -314,6 +326,8 @@ services:
     image: centos:7.6-dev
     privileged: true
     container_name: be-3
+    environment:
+      - TZ=Asia/Shanghai  # 设置时区为上海
     networks:
       doris_network:
         ipv4_address: 172.29.0.16
@@ -323,6 +337,8 @@ services:
     image: centos:7.6-dev
     privileged: true
     container_name: be-4
+    environment:
+      - TZ=Asia/Shanghai  # 设置时区为上海
     networks:
       doris_network:
         ipv4_address: 172.29.0.17
@@ -332,6 +348,8 @@ services:
     image: centos:7.6-dev
     privileged: true
     container_name: be-5
+    environment:
+      - TZ=Asia/Shanghai  # 设置时区为上海
     networks:
       doris_network:
         ipv4_address: 172.29.0.18
@@ -413,7 +431,7 @@ cat <<EOF >> fe.conf
 enable_fqdn_mode = true
 EOF
 cd /opt/apache-doris-2.1.6-bin-x64/fe/bin
-sh start_fe.sh --helper "fe-1:9050" --daemon
+sh start_fe.sh --helper "fe-1:9010" --daemon
 ```
 
 ### 5.4 启动BE
@@ -463,6 +481,13 @@ http {
 
         location / {
             proxy_pass http://backend_servers;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_read_timeout 3600s;  # 读取响应的超时时间
+            proxy_send_timeout 3600s;  # 发送请求的超时时间
+            proxy_connect_timeout 300s;  # 连接后端服务器的超时时间
         }
     }
 }
@@ -483,6 +508,66 @@ stream {
         proxy_pass mysqld;
     }
 }
+```
+```shell
+cat <<EOF > default.conf
+#user  nobody;
+
+worker_processes  1;
+# 日志文件路径和其他配置
+#error_log  logs/error.log;
+#error_log  logs/error.log  notice;
+#error_log  logs/error.log  info;
+
+#pid        logs/nginx.pid;
+
+events {
+    worker_connections  1024;
+}
+
+# HTTP 块
+http {
+    # 上游服务器组
+    upstream backend_servers {
+        server 172.29.0.11:8030;
+        server 172.29.0.12:8030;
+        server 172.29.0.13:8030;
+    }
+
+    # HTTP 服务器配置
+    server {
+        listen 8030;
+
+        location / {
+            proxy_pass http://backend_servers;
+            proxy_set_header Host \$host;
+            proxy_set_header X-Real-IP \$remote_addr;
+            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto \$scheme;
+            proxy_read_timeout 3600s;  # 读取响应的超时时间
+            proxy_send_timeout 3600s;  # 发送请求的超时时间
+            proxy_connect_timeout 300s;  # 连接后端服务器的超时时间
+        }
+    }
+}
+
+# Stream 块用于处理 TCP/UDP 代理负载均衡
+stream {
+    upstream mysqld {
+        hash $remote_addr consistent;
+        server 172.29.0.11:9030 weight=1 max_fails=2 fail_timeout=60s;
+        server 172.29.0.12:9030 weight=1 max_fails=2 fail_timeout=60s;
+        server 172.29.0.13:9030 weight=1 max_fails=2 fail_timeout=60s;
+    }
+
+    server {
+        listen 9030;
+        proxy_connect_timeout 300s;
+        proxy_timeout 300s;
+        proxy_pass mysqld;
+    }
+}
+EOF
 ```
 
 ### 6.2 访问nginx
