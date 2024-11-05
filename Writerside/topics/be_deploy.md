@@ -195,6 +195,7 @@ EOF
 ```
 
 ### 4.4 注册BE
+
 ```shell
 # mysql -uroot -P9030 -h127.0.0.1登录FE命令行 执行如下命令:
 # XXXXXXXX是BE的IP或域名
@@ -204,15 +205,12 @@ ALTER SYSTEM ADD BACKEND "XXXXXXXX:9050";
 
 ### 4.5 启动BE
 
-
 ```shell
 cd /opt/apache-doris-2.1.6-bin-x64/be/bin
-sh start_be.sh
+sh start_be.sh --daemon
 ```
 
-
 ### 4.6 查看FE和BE
-
 
 ```shell
 (base) [root@VM-8-10-centos bin]# mysql -uroot -P9030 -h127.0.0.1

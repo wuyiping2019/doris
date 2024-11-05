@@ -14,6 +14,9 @@
         </toc-element>
         <toc-element topic="operate.md">
             <toc-element topic="visit.md"/>
+            <toc-element topic="ETL.md">
+                <toc-element topic="JDBC-Catalog.md"/>
+            </toc-element>
         </toc-element>
         <toc-element topic="maintenance.md">
             <toc-element topic="node.md"/>
