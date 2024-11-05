@@ -743,6 +743,65 @@ RUN rm -rf apache-doris-2.1.6-bin-x64/be/conf/be.conf
 RUN bash install_jdk.sh
 EOF
 
+cat <<EOF > default.conf
+#user  nobody;
+
+worker_processes  1;
+# 日志文件路径和其他配置
+#error_log  logs/error.log;
+#error_log  logs/error.log  notice;
+#error_log  logs/error.log  info;
+
+#pid        logs/nginx.pid;
+
+events {
+    worker_connections  1024;
+}
+
+# HTTP 块
+http {
+    # 上游服务器组
+    upstream backend_servers {
+        server 172.29.0.11:8030;
+        server 172.29.0.12:8030;
+        server 172.29.0.13:8030;
+    }
+
+    # HTTP 服务器配置
+    server {
+        listen 8030;
+
+        location / {
+            proxy_pass http://backend_servers;
+            proxy_set_header Host \$host;
+            proxy_set_header X-Real-IP \$remote_addr;
+            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto \$scheme;
+            proxy_read_timeout 3600s;  # 读取响应的超时时间
+            proxy_send_timeout 3600s;  # 发送请求的超时时间
+            proxy_connect_timeout 300s;  # 连接后端服务器的超时时间
+        }
+    }
+}
+
+# Stream 块用于处理 TCP/UDP 代理负载均衡
+stream {
+    upstream mysqld {
+        hash \$remote_addr consistent;
+        server 172.29.0.11:9030 weight=1 max_fails=2 fail_timeout=60s;
+        server 172.29.0.12:9030 weight=1 max_fails=2 fail_timeout=60s;
+        server 172.29.0.13:9030 weight=1 max_fails=2 fail_timeout=60s;
+    }
+
+    server {
+        listen 9030;
+        proxy_connect_timeout 300s;
+        proxy_timeout 300s;
+        proxy_pass mysqld;
+    }
+}
+EOF
+
 cat <<EOF > docker-compose.yaml
 version: '3.8'
 
@@ -760,7 +819,7 @@ services:
       - "8030:8030"
       - "9030:9030"
     volumes:
-      - /opt/default.conf:/etc/nginx/conf.d/default.conf
+      - /opt/doirs/default.conf:/etc/nginx/conf.d/default.conf
     command: bash -c "nginx -c /etc/nginx/conf.d/default.conf && tail -f /dev/null"
 
   fe-1:
@@ -809,13 +868,13 @@ services:
       - /opt/doris/fe.conf:/opt/apache-doris-2.1.6-bin-x64/fe/conf/fe.conf
     depends_on:
       - fe-1
-    #command: >
-    #  bash -c "
-    #  sh /opt/doris_prepare.sh &&
-    #  sh /opt/apache-doris-2.1.6-bin-x64/fe/bin/start_fe.sh --helper \$\$HELPER
-    #  "
     command: >
-      bash -c "tail -f /dev/null"
+      bash -c "
+      sh /opt/doris_prepare.sh &&
+      sh /opt/apache-doris-2.1.6-bin-x64/fe/bin/start_fe.sh --helper \$\$HELPER
+      "
+    #command: >
+    #  bash -c "tail -f /dev/null"
   fe-3:
     image: centos:7.6-dev
     privileged: true
@@ -837,13 +896,13 @@ services:
       - /opt/doris/fe.conf:/opt/apache-doris-2.1.6-bin-x64/fe/conf/fe.conf
     depends_on:
         - fe-1
-    #command: >
-    #  bash -c "
-    #  sh /opt/doris_prepare.sh &&
-    #  sh /opt/apache-doris-2.1.6-bin-x64/fe/bin/start_fe.sh --helper \$\$HELPER
-    #  "
     command: >
-      bash -c "tail -f /dev/null"
+      bash -c "
+      sh /opt/doris_prepare.sh &&
+      sh /opt/apache-doris-2.1.6-bin-x64/fe/bin/start_fe.sh --helper \$\$HELPER
+      "
+    #command: >
+    #  bash -c "tail -f /dev/null"
   be-1:
     image: centos:7.6-dev
     privileged: true
@@ -864,13 +923,13 @@ services:
       - /opt/doris/be.conf:/opt/apache-doris-2.1.6-bin-x64/be/conf/be.conf
     depends_on:
         - fe-1
-    #command: >
-    #  bash -c "
-    #  sh /opt/doris_prepare.sh && source /etc/profile.d/jdk.sh &&
-    #  sh /opt/apache-doris-2.1.6-bin-x64/be/bin/start_be.sh
-    #  "
     command: >
-      bash -c "tail -f /dev/null"
+      bash -c "
+      sh /opt/doris_prepare.sh && source /etc/profile.d/jdk.sh &&
+      sh /opt/apache-doris-2.1.6-bin-x64/be/bin/start_be.sh
+      "
+    #command: >
+    #  bash -c "tail -f /dev/null"
 
   be-2:
     image: centos:7.6-dev
@@ -892,13 +951,13 @@ services:
       - /opt/doris/be.conf:/opt/apache-doris-2.1.6-bin-x64/be/conf/be.conf
     depends_on:
         - fe-1
-    #command: >
-    #  bash -c "
-    #  sh /opt/doris_prepare.sh && source /etc/profile.d/jdk.sh &&
-    #  sh /opt/apache-doris-2.1.6-bin-x64/be/bin/start_be.sh
-    #  "
     command: >
-      bash -c "tail -f /dev/null"
+      bash -c "
+      sh /opt/doris_prepare.sh && source /etc/profile.d/jdk.sh &&
+      sh /opt/apache-doris-2.1.6-bin-x64/be/bin/start_be.sh
+      "
+    #command: >
+    #  bash -c "tail -f /dev/null"
 
   be-3:
     image: centos:7.6-dev
@@ -920,13 +979,13 @@ services:
       - /opt/doris/be.conf:/opt/apache-doris-2.1.6-bin-x64/be/conf/be.conf
     depends_on:
         - fe-1
-    #command: >
-    #  bash -c "
-    #  sh /opt/doris_prepare.sh && source /etc/profile.d/jdk.sh &&
-    #  sh /opt/apache-doris-2.1.6-bin-x64/be/bin/start_be.sh
-    #  "
     command: >
-      bash -c "tail -f /dev/null"
+      bash -c "
+      sh /opt/doris_prepare.sh && source /etc/profile.d/jdk.sh &&
+      sh /opt/apache-doris-2.1.6-bin-x64/be/bin/start_be.sh
+      "
+    #command: >
+    #  bash -c "tail -f /dev/null"
 
   be-4:
     image: centos:7.6-dev
@@ -948,13 +1007,13 @@ services:
       - /opt/doris/be.conf:/opt/apache-doris-2.1.6-bin-x64/be/conf/be.conf
     depends_on:
         - fe-1
-    #command: >
-    #  bash -c "
-    #  sh /opt/doris_prepare.sh && source /etc/profile.d/jdk.sh &&
-    #  sh /opt/apache-doris-2.1.6-bin-x64/be/bin/start_be.sh
-    #  "
     command: >
-      bash -c "tail -f /dev/null"
+      bash -c "
+      sh /opt/doris_prepare.sh && source /etc/profile.d/jdk.sh &&
+      sh /opt/apache-doris-2.1.6-bin-x64/be/bin/start_be.sh
+      "
+    #command: >
+    #  bash -c "tail -f /dev/null"
 
   be-5:
     image: centos:7.6-dev
@@ -976,13 +1035,13 @@ services:
       - /opt/doris/be.conf:/opt/apache-doris-2.1.6-bin-x64/be/conf/be.conf
     depends_on:
         - fe-1
-    #command: >
-    #  bash -c "
-    #  sh /opt/doris_prepare.sh && source /etc/profile.d/jdk.sh &&
-    #  sh /opt/apache-doris-2.1.6-bin-x64/be/bin/start_be.sh
-    #  "
     command: >
-      bash -c "tail -f /dev/null"
+      bash -c "
+      sh /opt/doris_prepare.sh && source /etc/profile.d/jdk.sh &&
+      sh /opt/apache-doris-2.1.6-bin-x64/be/bin/start_be.sh
+      "
+    #command: >
+    #  bash -c "tail -f /dev/null"
 
 networks:
   doris_network:
@@ -995,18 +1054,18 @@ EOF
 
 
 cat <<EOF > fe.conf
-CUR_DATE=`date +%Y%m%d-%H%M%S`
+CUR_DATE=\$(date +%Y%m%d-%H%M%S)
 
-LOG_DIR = ${DORIS_HOME}/log
-JAVA_OPTS="-Djavax.security.auth.useSubjectCredsOnly=false -Xss4m -Xmx8192m -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+PrintGCDateStamps -XX:+PrintGCDetails -Xloggc:$LOG_DIR/fe.gc.log.$CUR_DATE -Dlog4j2.formatMsgNoLookups=true"
+LOG_DIR = \${DORIS_HOME}/log
+JAVA_OPTS="-Djavax.security.auth.useSubjectCredsOnly=false -Xss4m -Xmx8192m -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+PrintGCDateStamps -XX:+PrintGCDetails -Xloggc:\$LOG_DIR/fe.gc.log.\$CUR_DATE -Dlog4j2.formatMsgNoLookups=true"
 
-JAVA_OPTS_FOR_JDK_9="-Djavax.security.auth.useSubjectCredsOnly=false -Xss4m -Xmx8192m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -Xlog:gc*:$LOG_DIR/fe.gc.log.$CUR_DATE:time -Dlog4j2.formatMsgNoLookups=true"
+JAVA_OPTS_FOR_JDK_9="-Djavax.security.auth.useSubjectCredsOnly=false -Xss4m -Xmx8192m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -Xlog:gc*:\$LOG_DIR/fe.gc.log.\$CUR_DATE:time -Dlog4j2.formatMsgNoLookups=true"
 
-JAVA_OPTS_FOR_JDK_17="-Djavax.security.auth.useSubjectCredsOnly=false -XX:+UseZGC -Xmx8192m -Xms8192m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=$LOG_DIR/ -Xlog:gc*:$LOG_DIR/fe.gc.log.$CUR_DATE:time"
+JAVA_OPTS_FOR_JDK_17="-Djavax.security.auth.useSubjectCredsOnly=false -XX:+UseZGC -Xmx8192m -Xms8192m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=\$LOG_DIR/ -Xlog:gc*:\$LOG_DIR/fe.gc.log.\$CUR_DATE:time"
 
-meta_dir = ${DORIS_HOME}/doris-meta
+meta_dir = \${DORIS_HOME}/doris-meta
 
-jdbc_drivers_dir = ${DORIS_HOME}/jdbc_drivers
+jdbc_drivers_dir = \${DORIS_HOME}/jdbc_drivers
 
 http_port = 8030
 rpc_port = 9020
@@ -1019,11 +1078,11 @@ enable_fqdn_mode = true
 EOF
 
 cat <<EOF > be.conf
-CUR_DATE=`date +%Y%m%d-%H%M%S`
+CUR_DATE=\$(date +%Y%m%d-%H%M%S)
 
-LOG_DIR="${DORIS_HOME}/log/"
+LOG_DIR="\${DORIS_HOME}/log/"
 
-JAVA_OPTS="-Xmx1024m -DlogPath=$LOG_DIR/jni.log -Xloggc:$DORIS_HOME/log/be.gc.log.$CUR_DATE -Djavax.security.auth.useSubjectCredsOnly=false -Dsun.security.krb5.debug=true -Dsun.java.command=DorisBE -XX:-CriticalJNINatives"
+JAVA_OPTS="-Xmx1024m -DlogPath=\$LOG_DIR/jni.log -Xloggc:\$DORIS_HOME/log/be.gc.log.\$CUR_DATE -Djavax.security.auth.useSubjectCredsOnly=false -Dsun.security.krb5.debug=true -Dsun.java.command=DorisBE -XX:-CriticalJNINatives"
 
 JEMALLOC_CONF="percpu_arena:percpu,background_thread:true,metadata_thp:auto,muzzy_decay_ms:5000,dirty_decay_ms:5000,oversize_threshold:0,prof:false,lg_prof_interval:-1"
 JEMALLOC_PROF_PRFIX="jemalloc_heap_profile_"
@@ -1035,8 +1094,8 @@ brpc_port = 8060
 arrow_flight_sql_port = -1
 
 enable_https = false
-ssl_certificate_path = "$DORIS_HOME/conf/cert.pem"
-ssl_private_key_path = "$DORIS_HOME/conf/key.pem"
+ssl_certificate_path = "\$DORIS_HOME/conf/cert.pem"
+ssl_private_key_path = "\$DORIS_HOME/conf/key.pem"
 sys_log_level = INFO
 aws_log_level=0
 AWS_EC2_METADATA_DISABLED=true
@@ -1112,67 +1171,6 @@ stream {
         proxy_pass mysqld;
     }
 }
-```
-
-```shell
-cat <<EOF > default.conf
-#user  nobody;
-
-worker_processes  1;
-# 日志文件路径和其他配置
-#error_log  logs/error.log;
-#error_log  logs/error.log  notice;
-#error_log  logs/error.log  info;
-
-#pid        logs/nginx.pid;
-
-events {
-    worker_connections  1024;
-}
-
-# HTTP 块
-http {
-    # 上游服务器组
-    upstream backend_servers {
-        server 172.29.0.11:8030;
-        server 172.29.0.12:8030;
-        server 172.29.0.13:8030;
-    }
-
-    # HTTP 服务器配置
-    server {
-        listen 8030;
-
-        location / {
-            proxy_pass http://backend_servers;
-            proxy_set_header Host \$host;
-            proxy_set_header X-Real-IP \$remote_addr;
-            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto \$scheme;
-            proxy_read_timeout 3600s;  # 读取响应的超时时间
-            proxy_send_timeout 3600s;  # 发送请求的超时时间
-            proxy_connect_timeout 300s;  # 连接后端服务器的超时时间
-        }
-    }
-}
-
-# Stream 块用于处理 TCP/UDP 代理负载均衡
-stream {
-    upstream mysqld {
-        hash $remote_addr consistent;
-        server 172.29.0.11:9030 weight=1 max_fails=2 fail_timeout=60s;
-        server 172.29.0.12:9030 weight=1 max_fails=2 fail_timeout=60s;
-        server 172.29.0.13:9030 weight=1 max_fails=2 fail_timeout=60s;
-    }
-
-    server {
-        listen 9030;
-        proxy_connect_timeout 300s;
-        proxy_timeout 300s;
-        proxy_pass mysqld;
-    }
-}
-EOF
 ```
 
 ### 7.2 访问nginx
