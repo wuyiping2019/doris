@@ -15,49 +15,88 @@ CREATE CATALOG XXXXXXX PROPERTIES (
 );
 ```
 
+## 1。1 docker-compose.yaml
+
 为了方便测试，可以使用docker启动一个MySQL数据：
 
 ```docker
-version: '3.8'
+version: '3'
 
 services:
-  mysql:
-    image: mysql:8
+  # MySQL
+  db:
     container_name: mysql8
-    restart: always
-    ports:
-      - "3306:3306"  # 映射端口
+    image: mysql:8.0
+    command: mysqld --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     environment:
-      MYSQL_ROOT_PASSWORD: User123$  # 设置 root 用户密码
-      MYSQL_DATABASE: test             # 创建初始数据库（可选）
-      TZ: Asia/Shanghai                  # 设置时区为中国标准时间
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: User123$
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+    ports:
+      - '3306:3306'
     volumes:
-      - ./my.cnf:/etc/mysql/conf.d/my.cnf  # 挂载配置文件
-      - mysql_data:/var/lib/mysql          # 持久化存储数据
-  
-volumes:
-  mysql_data:
-    driver: local
-
+      - './db/data:/var/lib/mysql'
+      - './db/my.cnf:/etc/mysql/conf.d/my.cnf'
 ```
+
+### 1.2 my.cnf
 
 使用到的my.cnf配置文件如下：
 
 ```shell
 [mysqld]
-# 设置编码为 UTF8MB4，支持中文
 character-set-server=utf8mb4
 collation-server=utf8mb4_unicode_ci
 
-# 其他配置参数（根据需要调整）
-sql_mode=STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION
+[client]
+default-character-set=utf8mb4
 ```
+
+### 1.3 启动MySQL
 
 启动MySQL:
 
 ```shell
 docker compose up -d
+```
 
+### 1.4 一步完成
+
+```shell
+cd /opt
+mkdir mysql8
+cd mysql8
+mkdir -p ./db/data
+cat <<EOF > db/my.cnf
+[mysqld]
+character-set-server=utf8mb4
+collation-server=utf8mb4_unicode_ci
+
+[client]
+default-character-set=utf8mb4
+EOF
+
+cat <<EOF > docker-compose.yaml
+version: '3'
+
+services:
+  # MySQL
+  db:
+    container_name: mysql8
+    image: mysql:8.0
+    command: mysqld --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: User123$
+      MYSQL_DATABASE: test
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+    ports:
+      - '3306:3306'
+    volumes:
+      - './db/data:/var/lib/mysql'
+      - './db/my.cnf:/etc/mysql/conf.d/my.cnf'
+EOF
+docker compose up -d
+mysql -uroot -h127.0.0.1 -pUser123$
 ```
 
 ## 2.创建同步目标表
@@ -71,7 +110,7 @@ CREATE TABLE user_table (
     age INT,
     email VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB;
 
 ```
 

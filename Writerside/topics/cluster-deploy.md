@@ -89,23 +89,23 @@ ip_to_hostname=(
     ["172.29.0.11"]="fe-1"
     ["172.29.0.12"]="fe-2"
     ["172.29.0.13"]="fe-3"
-    ["172.29.0.14"]="be-1"
-    ["172.29.0.15"]="be-2"
-    ["172.29.0.16"]="be-3"
-    ["172.29.0.17"]="be-4"
-    ["172.29.0.18"]="be-5"
+    ["172.29.0.21"]="be-1"
+    ["172.29.0.22"]="be-2"
+    ["172.29.0.23"]="be-3"
+    ["172.29.0.24"]="be-4"
+    ["172.29.0.25"]="be-5"
 )
 
 # 获取当前的 IP 地址
-current_ip=$(hostname -I | awk '{print $1}')  
+current_ip=$(hostname -I | awk '{print $1}')
 # 获取第一个 IP 地址# 从 map 中获取对应的 hostname
-if [[ -n "${ip_to_hostname[$current_ip]}" ]]; then    
+if [[ -n "${ip_to_hostname[$current_ip]}" ]]; then
     new_hostname="${ip_to_hostname[$current_ip]}"
     echo "将主机名修改为: $new_hostname"
-    # 修改主机名    
+    # 修改主机名
     echo $new_hostname > /etc/hostname
     # 验证修改结果
-    current_hostname=$(cat /etc/hostname)  
+    current_hostname=$(cat /etc/hostname)
     echo "当前主机名为: $current_hostname"
 else
     echo "未找到与 IP 地址 $current_ip 对应的主机名。"
@@ -140,8 +140,8 @@ cat /etc/hosts | tail -n 9  # 显示最后四行，以确认写入的内容
 ```shell
 #!/bin/bash
 cd /opt
-source ./set_hostname.sh 
-source ./add_hosts.sh
+source /opt/doris/set_hostname.sh 
+source /opt/doris/add_hosts.sh
 
 # 关系交换内存
 echo "关闭交换内存..."
@@ -184,12 +184,30 @@ opt
 
 ├── doris  
 │ ├── doris-2.1.6.tar.gz
+│ ├── fe.conf
+│ ├── be.conf
 │ ├── jdk8.tar.gz
 │ ├── doris_prepare.sh   
 │ ├── install_jdk.sh    
 │ ├── set_hostname.sh  
 │ ├── Dockerfile   
 │ ├── docker-compose.yaml
+│ ├── data/fe-1-meta-data
+│ ├── data/fe-1-jdbc-drivers
+│ ├── data/fe-2-meta-data
+│ ├── data/fe-2-jdbc-drivers
+│ ├── data/fe-3-meta-data
+│ ├── data/fe-3-jdbc-drivers
+│ ├── data/be-1-storage
+│ ├── data/be-1-jdbc-drivers
+│ ├── data/be-2-storage
+│ ├── data/be-2-jdbc-drivers
+│ ├── data/be-3-storage
+│ ├── data/be-3-jdbc-drivers
+│ ├── data/be-4-storage
+│ ├── data/be-4-jdbc-drivers
+│ ├── data/be-5-storage
+│ ├── data/be-5-jdbc-drivers
 
 ## 4.容器
 
@@ -219,21 +237,17 @@ RUN yum install -y \
 WORKDIR /opt
 
 COPY doris-2.1.6.tar.gz /opt/doris-2.1.6.tar.gz 
-
-COPY set_hostname.sh /opt/set_hostname.sh
-
-COPY add_hosts.sh /opt/add_hosts.sh
-
 COPY install_jdk.sh /opt/install_jdk.sh
-
-COPY doris_prepare.sh /opt/doris_prepare.sh
-
 COPY jdk8.tar.gz /opt/jdk8.gz
 
 RUN tar -zxvf doris-2.1.6.tar.gz
+RUN rm -rf apache-doris-2.1.6-bin-x64/fe/doris-meta
+RUN rm -rf apache-doris-2.1.6-bin-x64/fe/jdbc-drivers
+RUN rm -rf apache-doris-2.1.6-bin-x64/fe/conf/fe.conf
+RUN rm -rf apache-doris-2.1.6-bin-x64/be/storage
+RUN rm -rf apache-doris-2.1.6-bin-x64/be/jdbc-drivers
+RUN rm -rf apache-doris-2.1.6-bin-x64/be/conf/be.conf
 RUN bash install_jdk.sh
-
-
 ```
 
 #### 4.1.2 build
@@ -275,9 +289,16 @@ services:
     networks:
       doris_network:
         ipv4_address: 172.29.0.11
+    volumes:
+      - /opt/doris/set_hostname.sh:/opt/set_hostname.sh
+      - /opt/doris/add_hosts.sh:/opt/add_hosts.sh
+      - /opt/doris/doris_prepare.sh:/opt/doris_prepare.sh
+      # 映射数据
+      - /opt/doris/data/fe-1-meta-data:/opt/-x64/fe/doris-meta
+      - /opt/doris/data/fe-1-jdbc-dirvers:/opt/-x64/fe/jdbc_drivers
+      # 映射配置文件
+      - /opt/doris/fe.conf:/opt/-x64/fe/conf/fe.conf
     command: bash -c "tail -f /dev/null"
-
-
   fe-2:
     image: centos:7.6-dev
     privileged: true
@@ -287,6 +308,15 @@ services:
     networks:
       doris_network:
         ipv4_address: 172.29.0.12
+    volumes:
+      - /opt/doris/set_hostname.sh:/opt/set_hostname.sh
+      - /opt/doris/add_hosts.sh:/opt/add_hosts.sh
+      - /opt/doris/doris_prepare.sh:/opt/doris_prepare.sh
+      # 映射数据
+      - /opt/doris/data/fe-2-meta-data:/opt/-x64/fe/doris-meta
+      - /opt/doris/data/fe-2-jdbc-dirvers:/opt/-x64/fe/jdbc_drivers
+      # 映射配置文件
+      - /opt/doris/fe.conf:/opt/-x64/fe/conf/fe.conf
     command: bash -c "tail -f /dev/null"
 
   fe-3:
@@ -298,6 +328,15 @@ services:
     networks:
       doris_network:
         ipv4_address: 172.29.0.13
+    volumes:
+      - /opt/doris/set_hostname.sh:/opt/set_hostname.sh
+      - /opt/doris/add_hosts.sh:/opt/add_hosts.sh
+      - /opt/doris/doris_prepare.sh:/opt/doris_prepare.sh
+      # 映射数据
+      - /opt/doris/data/fe-3-meta-data:/opt/-x64/fe/doris-meta
+      - /opt/doris/data/fe-3-jdbc-dirvers:/opt/-x64/fe/jdbc_drivers
+      # 映射配置文件
+      - /opt/doris/fe.conf:/opt/-x64/fe/conf/fe.conf
     command: bash -c "tail -f /dev/null"
 
   be-1:
@@ -309,6 +348,15 @@ services:
     networks:
       doris_network:
         ipv4_address: 172.29.0.14
+    volumes:
+      - /opt/doris/set_hostname.sh:/opt/set_hostname.sh
+      - /opt/doris/add_hosts.sh:/opt/add_hosts.sh
+      - /opt/doris/doris_prepare.sh:/opt/doris_prepare.sh
+      # 映射数据
+      - /opt/doris/data/be-1-storage:/opt/-x64/be/storage
+      - /opt/doris/data/be-1-jdbc-dirvers:/opt/-x64/be/jdbc_drivers
+      # 映射配置文件
+      - /opt/doris/be.conf:/opt/-x64/be/conf/be.conf
     command: tail -f /dev/null
 
   be-2:
@@ -320,6 +368,15 @@ services:
     networks:
       doris_network:
         ipv4_address: 172.29.0.15
+    volumes:
+      - /opt/doris/set_hostname.sh:/opt/set_hostname.sh
+      - /opt/doris/add_hosts.sh:/opt/add_hosts.sh
+      - /opt/doris/doris_prepare.sh:/opt/doris_prepare.sh
+      # 映射数据
+      - /opt/doris/data/be-2-storage:/opt/-x64/be/storage
+      - /opt/doris/data/be-2-jdbc-dirvers:/opt/-x64/be/jdbc_drivers
+      # 映射配置文件
+      - /opt/doris/be.conf:/opt/-x64/be/conf/be.conf
     command: tail -f /dev/null
 
   be-3:
@@ -331,6 +388,15 @@ services:
     networks:
       doris_network:
         ipv4_address: 172.29.0.16
+    volumes:
+      - /opt/doris/set_hostname.sh:/opt/set_hostname.sh
+      - /opt/doris/add_hosts.sh:/opt/add_hosts.sh
+      - /opt/doris/doris_prepare.sh:/opt/doris_prepare.sh
+      # 映射数据
+      - /opt/doris/data/be-3-storage:/opt/-x64/be/storage
+      - /opt/doris/data/be-3-jdbc-dirvers:/opt/-x64/be/jdbc_drivers
+      # 映射配置文件
+      - /opt/doris/be.conf:/opt/-x64/be/conf/be.conf
     command: tail -f /dev/null
 
   be-4:
@@ -342,6 +408,15 @@ services:
     networks:
       doris_network:
         ipv4_address: 172.29.0.17
+    volumes:
+      - /opt/doris/set_hostname.sh:/opt/set_hostname.sh
+      - /opt/doris/add_hosts.sh:/opt/add_hosts.sh
+      - /opt/doris/doris_prepare.sh:/opt/doris_prepare.sh
+      # 映射数据
+      - /opt/doris/data/be-4-storage:/opt/-x64/be/storage
+      - /opt/doris/data/be-4-jdbc-dirvers:/opt/-x64/be/jdbc_drivers
+      # 映射配置文件
+      - /opt/doris/be.conf:/opt/-x64/be/conf/be.conf
     command: tail -f /dev/null
 
   be-5:
@@ -353,6 +428,15 @@ services:
     networks:
       doris_network:
         ipv4_address: 172.29.0.18
+    volumes:
+      - /opt/doris/set_hostname.sh:/opt/set_hostname.sh
+      - /opt/doris/add_hosts.sh:/opt/add_hosts.sh
+      - /opt/doris/doris_prepare.sh:/opt/doris_prepare.sh
+      # 映射数据
+      - /opt/doris/data/be-5-storage:/opt/-x64/be/storage
+      - /opt/doris/data/be-5-jdbc-dirvers:/opt/-x64/be/jdbc_drivers
+      # 映射配置文件
+      - /opt/doris/be.conf:/opt/-x64/be/conf/be.conf
     command: tail -f /dev/null
 
 networks:
@@ -380,7 +464,7 @@ docker compose up -d
 # 进入容器
 docker exec -it fe-1 bash
 sh doris_prepare.sh
-cd /opt/apache-doris-2.1.6-bin-x64/fe/conf
+cd /opt/-x64-x64/fe/conf
 cat <<EOF >> fe.conf
 enable_fqdn_mode = true
 EOF
@@ -445,9 +529,529 @@ cd /opt/apache-doris-2.1.6-bin-x64/be/bin
 sh start_fe.sh --daemon
 ```
 
-## 6.启动Nginx
+## 6.一步到位
 
-### 6.1 nginx配置
+```shell
+cd /opt
+mkdir doris
+cd doris
+mkdir -p data/fe-1-meta-data
+mkdir -p data/fe-1-jdbc-drivers
+
+mkdir -p data/fe-2-meta-data
+mkdir -p data/fe-2-jdbc-drivers
+
+mkdir -p data/fe-3-meta-data
+mkdir -p data/fe-3-jdbc-drivers
+
+mkdir -p data/be-1-storage
+mkdir -p data/be-1-jdbc-drivers
+
+mkdir -p data/be-2-storage
+mkdir -p data/be-2-jdbc-drivers
+
+mkdir -p data/be-3-storage
+mkdir -p data/be-3-jdbc-drivers
+
+mkdir -p data/be-4-storage
+mkdir -p data/be-4-jdbc-drivers
+
+mkdir -p data/be-5-storage
+mkdir -p data/be-5-jdbc-drivers
+
+
+if grep -q avx2 /proc/cpuinfo; then
+    doris_url="https://apache-doris-releases.oss-accelerate.aliyuncs.com/apache-doris-2.1.6-bin-x64.tar.gz"
+else
+    doris_url="https://apache-doris-releases.oss-accelerate.aliyuncs.com/apache-doris-2.1.6-bin-x64-noavx2.tar.gz"
+fi
+doris_tar="doris-2.1.6.tar.gz"
+wget -q "$doris_url" -O "$doris_tar" || { echo "Doris 下载失败"; exit 1; }
+
+jdk_url="https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u352-b08/OpenJDK8U-jdk_x64_linux_hotspot_8u352b08.tar.gz"
+jdk_tar="jdk8.tar.gz"
+wget -q "$jdk_url" -O "$jdk_tar" || { echo "JDK 下载失败"; exit 1; }
+
+cat <<EOF > install_jdk.sh
+#!/bin/bash
+
+# 设置 JDK 文件名和安装目录
+JDK_FILE="/opt/jdk8.tar.gz"
+JAVA_DIR="/usr/java"
+JAVA_HOME="\$JAVA_DIR/jdk8u352-b08"
+JRE_HOME="\$JAVA_HOME/jre"
+
+# 创建 Java 目录
+mkdir -p \$JAVA_DIR
+
+# 移动 JDK 到安装目录
+cp -r \$JDK_FILE \$JAVA_DIR/jdk8.tar.gz
+
+# 定位到 Java 安装目录并解压
+cd \$JAVA_DIR
+if [[ ! -d "\$JAVA_HOME" ]]; then
+    tar -zxvf \$JDK_FILE
+
+    # 配置环境变量
+    {
+      echo "export JAVA_HOME=\$JAVA_HOME"
+      echo "export JRE_HOME=\$JRE_HOME"
+      echo "export CLASSPATH=.:\$JAVA_HOME/lib:\$JRE_HOME/lib"
+      echo "export PATH=\$JAVA_HOME/bin:\$PATH"
+    } >> /etc/profile.d/jdk.sh
+
+    # 设置脚本可执行权限
+    chmod u+x /etc/profile.d/jdk.sh
+
+    # 使环境变量生效
+    source /etc/profile
+
+    # 输出 Java 版本以验证安装
+    java -version
+    echo "安装完成"
+else
+    echo "已经存在安装目录，无需重复安装"
+fi
+EOF
+
+cat <<EOF > set_hostname.sh
+#!/bin/bash
+
+# 定义一个关联数组
+declare -A ip_to_hostname
+
+# 填充数组，IP 地址作为键，主机名作为值
+ip_to_hostname=(
+    ["172.29.0.10"]="dorix-proxy"
+    ["172.29.0.11"]="fe-1"
+    ["172.29.0.12"]="fe-2"
+    ["172.29.0.13"]="fe-3"
+    ["172.29.0.21"]="be-1"
+    ["172.29.0.22"]="be-2"
+    ["172.29.0.23"]="be-3"
+    ["172.29.0.24"]="be-4"
+    ["172.29.0.25"]="be-5"
+)
+
+# 获取当前的 IP 地址
+current_ip=\$(hostname -I | awk '{print \$1}')
+# 获取第一个 IP 地址# 从 map 中获取对应的 hostname
+if [[ -n "\${ip_to_hostname[\$current_ip]}" ]]; then
+    new_hostname="\${ip_to_hostname[\$current_ip]}"
+    echo "将主机名修改为: \$new_hostname"
+    # 修改主机名
+    echo \$new_hostname > /etc/hostname
+    # 验证修改结果
+    current_hostname=\$(cat /etc/hostname)
+    echo "当前主机名为: \$current_hostname"
+else
+    echo "未找到与 IP 地址 \$current_ip 对应的主机名。"
+fi
+EOF
+
+cat <<EOF > add_hosts.sh
+#!/bin/bash
+
+cat <<EOL > /etc/hosts
+127.0.0.1 localhost
+172.29.0.10 dorix-proxy
+172.29.0.11 fe-1
+172.29.0.12 fe-2
+172.29.0.13 fe-3
+172.29.0.14 be-1
+172.29.0.15 be-2
+172.29.0.16 be-3
+172.29.0.17 be-4
+172.29.0.18 be-5
+EOL
+
+# 输出结果
+echo "已将以下内容添加到 /etc/hosts:"
+cat /etc/hosts | tail -n 9  # 显示最后四行，以确认写入的内容
+EOF
+
+cat <<EOF > doris_prepare.sh
+#!/bin/bash
+cd /opt
+source /opt/doris/set_hostname.sh 
+source /opt/doris/add_hosts.sh
+
+# 关系交换内存
+echo "关闭交换内存..."
+swapoff -a
+# 关闭防火墙
+# echo "停止防火墙服务..."
+# systemctl stop firewalld.service
+# systemctl disable firewalld.service
+# 配置 NTP 服务
+# echo "启动并启用 NTP 服务..."
+# systemctl start ntpd.service
+# systemctl enable ntpd.service
+# 设置系统最大打开文件句柄数
+echo "设置最大打开文件句柄数..."
+{  
+    echo "* soft nofile 1000000"
+    echo "* hard nofile 1000000"
+} >> /etc/security/limits.conf
+# 修改虚拟内存区域数量
+echo "设置 vm.max_map_count..."
+sysctl -w vm.max_map_count=2000000
+# 关闭透明大页
+# echo "关闭透明大页..."
+#echo never > /sys/kernel/mm/transparent_hugepage/enabled
+#echo never > /sys/kernel/mm/transparent_hugepage/defrag
+# 确认设置
+echo "设置完成，当前配置："
+echo "最大打开文件句柄数:"
+cat /etc/security/limits.conf | tail -n 9
+echo "vm.max_map_count:"
+sysctl vm.max_map_count
+# echo "透明大页设置:"
+# cat /sys/kernel/mm/transparent_hugepage/enabledcat /sys/kernel/mm/transparent_hugepage/defrag
+EOF
+
+cat <<EOF > Dockerfile
+FROM centos:7.6.1810
+
+RUN curl -o /etc/yum.repos.d/CentOS-Base.repo \
+    http://mirrors.aliyun.com/repo/Centos-7.repo && \
+    yum install -y epel-release net-tools firewalld ntpd && \
+    yum clean all
+
+# 安装常用工具
+RUN yum install -y \
+    wget \
+    vim \
+    tar \
+    gzip \
+    && yum clean all
+
+
+WORKDIR /opt
+
+COPY doris-2.1.6.tar.gz /opt/doris-2.1.6.tar.gz 
+COPY install_jdk.sh /opt/install_jdk.sh
+COPY jdk8.tar.gz /opt/jdk8.tar.gz
+
+RUN tar -zxvf doris-2.1.6.tar.gz
+RUN rm -rf apache-doris-2.1.6-bin-x64/fe/doris-meta
+RUN rm -rf apache-doris-2.1.6-bin-x64/fe/jdbc-drivers
+RUN rm -rf apache-doris-2.1.6-bin-x64/fe/conf/fe.conf
+RUN rm -rf apache-doris-2.1.6-bin-x64/be/storage
+RUN rm -rf apache-doris-2.1.6-bin-x64/be/jdbc-drivers
+RUN rm -rf apache-doris-2.1.6-bin-x64/be/conf/be.conf
+RUN bash install_jdk.sh
+EOF
+
+cat <<EOF > docker-compose.yaml
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:latest
+    privileged: true
+    container_name: nginx
+    environment:
+      - TZ=Asia/Shanghai  # 设置时区为上海
+    networks:
+      doris_network:
+        ipv4_address: 172.29.0.10
+    ports:
+      - "8030:8030"
+      - "9030:9030"
+    volumes:
+      - /opt/default.conf:/etc/nginx/conf.d/default.conf
+    command: bash -c "nginx -c /etc/nginx/conf.d/default.conf && tail -f /dev/null"
+
+  fe-1:
+    image: centos:7.6-dev
+    privileged: true
+    container_name: fe-1
+    environment:
+      - TZ=Asia/Shanghai  # 设置时区为上海
+    networks:
+      doris_network:
+        ipv4_address: 172.29.0.11
+    volumes:
+      - /opt/doris/set_hostname.sh:/opt/set_hostname.sh
+      - /opt/doris/add_hosts.sh:/opt/add_hosts.sh
+      - /opt/doris/doris_prepare.sh:/opt/doris_prepare.sh
+      # 映射数据
+      - /opt/doris/data/fe-1-meta-data:/opt/apache-doris-2.1.6-bin-x64/fe/doris-meta
+      - /opt/doris/data/fe-1-jdbc-dirvers:/opt/apache-doris-2.1.6-bin-x64/fe/jdbc_drivers
+      # 映射配置文件
+      - /opt/doris/fe.conf:/opt/apache-doris-2.1.6-bin-x64/fe/conf/fe.conf
+    command: >
+      bash -c "
+      sh /opt/doris_prepare.sh && source /etc/profile.d/jdk.sh &&
+      sh /opt/apache-doris-2.1.6-bin-x64/fe/bin/start_fe.sh
+      "
+    #command: >
+    #  bash -c "tail -f /dev/null"
+  fe-2:
+    image: centos:7.6-dev
+    privileged: true
+    container_name: fe-2
+    environment:
+      - TZ=Asia/Shanghai  # 设置时区为上海
+      - HELPER=fe-1:9010
+    networks:
+      doris_network:
+        ipv4_address: 172.29.0.12
+    volumes:
+      - /opt/doris/set_hostname.sh:/opt/set_hostname.sh
+      - /opt/doris/add_hosts.sh:/opt/add_hosts.sh
+      - /opt/doris/doris_prepare.sh:/opt/doris_prepare.sh
+      # 映射数据
+      - /opt/doris/data/fe-2-meta-data:/opt/apache-doris-2.1.6-bin-x64/fe/doris-meta
+      - /opt/doris/data/fe-2-jdbc-dirvers:/opt/apache-doris-2.1.6-bin-x64/fe/jdbc_drivers
+      # 映射配置文件
+      - /opt/doris/fe.conf:/opt/apache-doris-2.1.6-bin-x64/fe/conf/fe.conf
+    depends_on:
+      - fe-1
+    #command: >
+    #  bash -c "
+    #  sh /opt/doris_prepare.sh &&
+    #  sh /opt/apache-doris-2.1.6-bin-x64/fe/bin/start_fe.sh --helper \$\$HELPER
+    #  "
+    command: >
+      bash -c "tail -f /dev/null"
+  fe-3:
+    image: centos:7.6-dev
+    privileged: true
+    container_name: fe-3
+    environment:
+      - TZ=Asia/Shanghai  # 设置时区为上海
+      - HELPER=fe-1:9010
+    networks:
+      doris_network:
+        ipv4_address: 172.29.0.13
+    volumes:
+      - /opt/doris/set_hostname.sh:/opt/set_hostname.sh
+      - /opt/doris/add_hosts.sh:/opt/add_hosts.sh
+      - /opt/doris/doris_prepare.sh:/opt/doris_prepare.sh
+      # 映射数据
+      - /opt/doris/data/fe-3-meta-data:/opt/apache-doris-2.1.6-bin-x64/fe/doris-meta
+      - /opt/doris/data/fe-3-jdbc-dirvers:/opt/apache-doris-2.1.6-bin-x64/fe/jdbc_drivers
+      # 映射配置文件
+      - /opt/doris/fe.conf:/opt/apache-doris-2.1.6-bin-x64/fe/conf/fe.conf
+    depends_on:
+        - fe-1
+    #command: >
+    #  bash -c "
+    #  sh /opt/doris_prepare.sh &&
+    #  sh /opt/apache-doris-2.1.6-bin-x64/fe/bin/start_fe.sh --helper \$\$HELPER
+    #  "
+    command: >
+      bash -c "tail -f /dev/null"
+  be-1:
+    image: centos:7.6-dev
+    privileged: true
+    container_name: be-1
+    environment:
+      - TZ=Asia/Shanghai  # 设置时区为上海
+    networks:
+      doris_network:
+        ipv4_address: 172.29.0.14
+    volumes:
+      - /opt/doris/set_hostname.sh:/opt/set_hostname.sh
+      - /opt/doris/add_hosts.sh:/opt/add_hosts.sh
+      - /opt/doris/doris_prepare.sh:/opt/doris_prepare.sh
+      # 映射数据
+      - /opt/doris/data/be-1-storage:/opt/apache-doris-2.1.6-bin-x64/be/storage
+      - /opt/doris/data/be-1-jdbc-dirvers:/opt/apache-doris-2.1.6-bin-x64/be/jdbc_drivers
+      # 映射配置文件
+      - /opt/doris/be.conf:/opt/apache-doris-2.1.6-bin-x64/be/conf/be.conf
+    depends_on:
+        - fe-1
+    #command: >
+    #  bash -c "
+    #  sh /opt/doris_prepare.sh && source /etc/profile.d/jdk.sh &&
+    #  sh /opt/apache-doris-2.1.6-bin-x64/be/bin/start_be.sh
+    #  "
+    command: >
+      bash -c "tail -f /dev/null"
+
+  be-2:
+    image: centos:7.6-dev
+    privileged: true
+    container_name: be-2
+    environment:
+      - TZ=Asia/Shanghai  # 设置时区为上海
+    networks:
+      doris_network:
+        ipv4_address: 172.29.0.15
+    volumes:
+      - /opt/doris/set_hostname.sh:/opt/set_hostname.sh
+      - /opt/doris/add_hosts.sh:/opt/add_hosts.sh
+      - /opt/doris/doris_prepare.sh:/opt/doris_prepare.sh
+      # 映射数据
+      - /opt/doris/data/be-2-storage:/opt/apache-doris-2.1.6-bin-x64/be/storage
+      - /opt/doris/data/be-2-jdbc-dirvers:/opt/apache-doris-2.1.6-bin-x64/be/jdbc_drivers
+      # 映射配置文件
+      - /opt/doris/be.conf:/opt/apache-doris-2.1.6-bin-x64/be/conf/be.conf
+    depends_on:
+        - fe-1
+    #command: >
+    #  bash -c "
+    #  sh /opt/doris_prepare.sh && source /etc/profile.d/jdk.sh &&
+    #  sh /opt/apache-doris-2.1.6-bin-x64/be/bin/start_be.sh
+    #  "
+    command: >
+      bash -c "tail -f /dev/null"
+
+  be-3:
+    image: centos:7.6-dev
+    privileged: true
+    container_name: be-3
+    environment:
+      - TZ=Asia/Shanghai  # 设置时区为上海
+    networks:
+      doris_network:
+        ipv4_address: 172.29.0.16
+    volumes:
+      - /opt/doris/set_hostname.sh:/opt/set_hostname.sh
+      - /opt/doris/add_hosts.sh:/opt/add_hosts.sh
+      - /opt/doris/doris_prepare.sh:/opt/doris_prepare.sh
+      # 映射数据
+      - /opt/doris/data/be-3-storage:/opt/apache-doris-2.1.6-bin-x64/be/storage
+      - /opt/doris/data/be-3-jdbc-dirvers:/opt/apache-doris-2.1.6-bin-x64/be/jdbc_drivers
+      # 映射配置文件
+      - /opt/doris/be.conf:/opt/apache-doris-2.1.6-bin-x64/be/conf/be.conf
+    depends_on:
+        - fe-1
+    #command: >
+    #  bash -c "
+    #  sh /opt/doris_prepare.sh && source /etc/profile.d/jdk.sh &&
+    #  sh /opt/apache-doris-2.1.6-bin-x64/be/bin/start_be.sh
+    #  "
+    command: >
+      bash -c "tail -f /dev/null"
+
+  be-4:
+    image: centos:7.6-dev
+    privileged: true
+    container_name: be-4
+    environment:
+      - TZ=Asia/Shanghai  # 设置时区为上海
+    networks:
+      doris_network:
+        ipv4_address: 172.29.0.17
+    volumes:
+      - /opt/doris/set_hostname.sh:/opt/set_hostname.sh
+      - /opt/doris/add_hosts.sh:/opt/add_hosts.sh
+      - /opt/doris/doris_prepare.sh:/opt/doris_prepare.sh
+      # 映射数据
+      - /opt/doris/data/be-4-storage:/opt/apache-doris-2.1.6-bin-x64/be/storage
+      - /opt/doris/data/be-4-jdbc-dirvers:/opt/apache-doris-2.1.6-bin-x64/be/jdbc_drivers
+      # 映射配置文件
+      - /opt/doris/be.conf:/opt/apache-doris-2.1.6-bin-x64/be/conf/be.conf
+    depends_on:
+        - fe-1
+    #command: >
+    #  bash -c "
+    #  sh /opt/doris_prepare.sh && source /etc/profile.d/jdk.sh &&
+    #  sh /opt/apache-doris-2.1.6-bin-x64/be/bin/start_be.sh
+    #  "
+    command: >
+      bash -c "tail -f /dev/null"
+
+  be-5:
+    image: centos:7.6-dev
+    privileged: true
+    container_name: be-5
+    environment:
+      - TZ=Asia/Shanghai  # 设置时区为上海
+    networks:
+      doris_network:
+        ipv4_address: 172.29.0.18
+    volumes:
+      - /opt/doris/set_hostname.sh:/opt/set_hostname.sh
+      - /opt/doris/add_hosts.sh:/opt/add_hosts.sh
+      - /opt/doris/doris_prepare.sh:/opt/doris_prepare.sh
+      # 映射数据
+      - /opt/doris/data/be-5-storage:/opt/apache-doris-2.1.6-bin-x64/be/storage
+      - /opt/doris/data/be-5-jdbc-dirvers:/opt/apache-doris-2.1.6-bin-x64/be/jdbc_drivers
+      # 映射配置文件
+      - /opt/doris/be.conf:/opt/apache-doris-2.1.6-bin-x64/be/conf/be.conf
+    depends_on:
+        - fe-1
+    #command: >
+    #  bash -c "
+    #  sh /opt/doris_prepare.sh && source /etc/profile.d/jdk.sh &&
+    #  sh /opt/apache-doris-2.1.6-bin-x64/be/bin/start_be.sh
+    #  "
+    command: >
+      bash -c "tail -f /dev/null"
+
+networks:
+  doris_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.29.0.0/16
+EOF
+
+
+cat <<EOF > fe.conf
+CUR_DATE=`date +%Y%m%d-%H%M%S`
+
+LOG_DIR = ${DORIS_HOME}/log
+JAVA_OPTS="-Djavax.security.auth.useSubjectCredsOnly=false -Xss4m -Xmx8192m -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+PrintGCDateStamps -XX:+PrintGCDetails -Xloggc:$LOG_DIR/fe.gc.log.$CUR_DATE -Dlog4j2.formatMsgNoLookups=true"
+
+JAVA_OPTS_FOR_JDK_9="-Djavax.security.auth.useSubjectCredsOnly=false -Xss4m -Xmx8192m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -Xlog:gc*:$LOG_DIR/fe.gc.log.$CUR_DATE:time -Dlog4j2.formatMsgNoLookups=true"
+
+JAVA_OPTS_FOR_JDK_17="-Djavax.security.auth.useSubjectCredsOnly=false -XX:+UseZGC -Xmx8192m -Xms8192m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=$LOG_DIR/ -Xlog:gc*:$LOG_DIR/fe.gc.log.$CUR_DATE:time"
+
+meta_dir = ${DORIS_HOME}/doris-meta
+
+jdbc_drivers_dir = ${DORIS_HOME}/jdbc_drivers
+
+http_port = 8030
+rpc_port = 9020
+query_port = 9030
+edit_log_port = 9010
+arrow_flight_sql_port = -1
+sys_log_level = INFO
+sys_log_mode = NORMAL
+enable_fqdn_mode = true
+EOF
+
+cat <<EOF > be.conf
+CUR_DATE=`date +%Y%m%d-%H%M%S`
+
+LOG_DIR="${DORIS_HOME}/log/"
+
+JAVA_OPTS="-Xmx1024m -DlogPath=$LOG_DIR/jni.log -Xloggc:$DORIS_HOME/log/be.gc.log.$CUR_DATE -Djavax.security.auth.useSubjectCredsOnly=false -Dsun.security.krb5.debug=true -Dsun.java.command=DorisBE -XX:-CriticalJNINatives"
+
+JEMALLOC_CONF="percpu_arena:percpu,background_thread:true,metadata_thp:auto,muzzy_decay_ms:5000,dirty_decay_ms:5000,oversize_threshold:0,prof:false,lg_prof_interval:-1"
+JEMALLOC_PROF_PRFIX="jemalloc_heap_profile_"
+
+be_port = 9060
+webserver_port = 8040
+heartbeat_service_port = 9050
+brpc_port = 8060
+arrow_flight_sql_port = -1
+
+enable_https = false
+ssl_certificate_path = "$DORIS_HOME/conf/cert.pem"
+ssl_private_key_path = "$DORIS_HOME/conf/key.pem"
+sys_log_level = INFO
+aws_log_level=0
+AWS_EC2_METADATA_DISABLED=true
+
+EOF
+docker build -t centos:7.6-dev
+docker compose up -d
+
+
+
+```
+
+## 7.启动Nginx
+
+### 7.1 nginx配置
 
 使用Ngxin进行反向代理多个FE，自动进行负载均衡。
 
@@ -509,6 +1113,7 @@ stream {
     }
 }
 ```
+
 ```shell
 cat <<EOF > default.conf
 #user  nobody;
@@ -570,7 +1175,7 @@ stream {
 EOF
 ```
 
-### 6.2 访问nginx
+### 7.2 访问nginx
 
 ```shell
 (base) [root@VM-8-10-centos doris]# mysql -uroot -P9030 -h172.29.0.10 -p
