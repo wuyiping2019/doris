@@ -1150,7 +1150,7 @@ aws_log_level=0
 AWS_EC2_METADATA_DISABLED=true
 
 EOF
-docker build -t centos:7.6-dev
+docker build -t centos:7.6-dev .
 docker compose up -d
 
 
