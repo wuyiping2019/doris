@@ -62,7 +62,7 @@ priority_networks=
 ## 8.Nginx反向代理
 
 在操作Doris时，客户端需要与FE进程进行交互，集群部署时存在多个FE进程，可以使用Nginx对FE进程进行反向代理。
-具体配置反向代理，可以参开[启动Nginx](cluster-deploy.md#6-nginx)
+具体配置反向代理，可以参开[启动Nginx](cluster-deploy.md#7-nginx)
 
 
 

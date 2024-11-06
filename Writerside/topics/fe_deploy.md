@@ -177,7 +177,7 @@ table_name_length_limit=128
 
 #### 4.1.2 安装JDK8
 
-[安装JDK](scripts_prepare.md#1-install-jdk-sh)
+[安装JDK](cluster-deploy.md#2-1-install-jdk-sh)
 
 ### 4.2 下载并解压doris
 
