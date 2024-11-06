@@ -710,6 +710,50 @@ sysctl vm.max_map_count
 # cat /sys/kernel/mm/transparent_hugepage/enabledcat /sys/kernel/mm/transparent_hugepage/defrag
 EOF
 
+
+
+cat <<EOF > fe_master_init.sh
+#!/bin/bash
+
+# MySQL 连接配置
+HOST="127.0.0.1"             # MySQL 主机地址
+USER="root"                  # MySQL 用户名
+PASSWORD=""     # MySQL 密码 空字符
+
+SQL_COMMAND='
+  ALTER SYSTEM ADD FOLLOWER "fe-2:9010";
+  ALTER SYSTEM ADD FOLLOWER "fe-3:9010";
+  ALTER SYSTEM ADD BACKEND "be-1:9050", "be-2:9050", "be-3:9050", "be-4:9050", "be-5:9050";
+'
+# 重试配置
+MAX_RETRIES=5                # 最大重试次数
+RETRY_INTERVAL=10            # 每次重试之间的等待时间（秒）
+
+# 执行 SQL 的函数
+run_sql() {
+    mysql -h"\$HOST" -u"\$USER" -p"\$PASSWORD" -P9030 -e "\$SQL_COMMAND"
+}
+
+# 带重试逻辑的执行过程
+attempt=1
+while (( attempt <= MAX_RETRIES )); do
+    echo "尝试连接 MySQL 并执行 SQL (第 \$attempt 次尝试)..."
+    if run_sql; then
+        echo "SQL 执行成功。"
+        exit 0
+    else
+        echo "SQL 执行失败，等待 \$RETRY_INTERVAL 秒后重试..."
+        sleep "\$RETRY_INTERVAL"  # 等待指定的秒数再重试
+    fi
+    ((attempt++))
+done
+
+echo "已达到最大重试次数，无法执行 SQL。"
+exit 1
+EOF
+
+
+
 cat <<EOF > Dockerfile
 FROM centos:7.6.1810
 
@@ -724,6 +768,7 @@ RUN yum install -y \
     vim \
     tar \
     gzip \
+    mysql \
     && yum clean all
 
 
@@ -819,7 +864,7 @@ services:
       - "8030:8030"
       - "9030:9030"
     volumes:
-      - /opt/doirs/default.conf:/etc/nginx/conf.d/default.conf
+      - /opt/doris/default.conf:/etc/nginx/conf.d/default.conf
     command: bash -c "nginx -c /etc/nginx/conf.d/default.conf && tail -f /dev/null"
 
   fe-1:
@@ -840,10 +885,14 @@ services:
       - /opt/doris/data/fe-1-jdbc-dirvers:/opt/apache-doris-2.1.6-bin-x64/fe/jdbc_drivers
       # 映射配置文件
       - /opt/doris/fe.conf:/opt/apache-doris-2.1.6-bin-x64/fe/conf/fe.conf
+      # 初始化脚本
+      - /opt/doris/fe_master_init.sh:/opt/fe_master_init.sh
     command: >
       bash -c "
       sh /opt/doris_prepare.sh && source /etc/profile.d/jdk.sh &&
-      sh /opt/apache-doris-2.1.6-bin-x64/fe/bin/start_fe.sh
+      sh /opt/apache-doris-2.1.6-bin-x64/fe/bin/start_fe.sh --damoen &&
+      sh /opt/fe_master_init.sh &&
+      tail -f /opt/apache-doris-2.1.6-bin-x64/fe/log/fe.log
       "
     #command: >
     #  bash -c "tail -f /dev/null"
