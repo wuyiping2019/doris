@@ -77,6 +77,7 @@ ALTER SYSTEM DROP FOLLOWER "follower_host:edit_log_port"
 ```shell
 ALTER SYSTEM DROP OBSERVER "follower_host:edit_log_port"
 
+
 ```
 
 ## 7.删除BE

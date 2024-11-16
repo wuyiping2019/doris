@@ -22,5 +22,8 @@
             <toc-element topic="node.md"/>
         </toc-element>
     </toc-element>
+    <toc-element topic="DolphinScheduler.md">
+        <toc-element topic="DolphinSchedulerDeploy.md"/>
+    </toc-element>
 
 </instance-profile>
