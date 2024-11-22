@@ -21,6 +21,30 @@
         <toc-element topic="maintenance.md">
             <toc-element topic="node.md"/>
         </toc-element>
+        <toc-element topic="warehouse.md">
+            <toc-element topic="ODS.md">
+                <toc-element topic="ads_yykb.md"/>
+                <toc-element topic="bjcard_makeuse.md"/>
+            </toc-element>
+        </toc-element>
+    </toc-element>
+    <toc-element topic="Superset.md">
+        <toc-element topic="superset-dev-env.md"/>
+    </toc-element>
+    <toc-element topic="canal-sync.md">
+        <toc-element topic="MySQLConfig.md"/>
+        <toc-element topic="CanalServer.md"/>
+    </toc-element>
+    <toc-element topic="test.md">
+        <toc-element topic="bi_data_search.md"/>
+        <toc-element topic="channel_code_statistics.md">
+            <toc-element topic="dimensionStatistics.md"/>
+            <toc-element topic="lineStatistics.md"/>
+            <toc-element topic="totalStatistics-V1.md"/>
+            <toc-element topic="totalStatistics.md"/>
+            <toc-element topic="listStatistics.md"/>
+        </toc-element>
+        <toc-element topic="metadata.md"/>
     </toc-element>
     <toc-element topic="DolphinScheduler.md">
         <toc-element topic="DolphinSchedulerDeploy.md"/>
