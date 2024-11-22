@@ -28,6 +28,7 @@
             </toc-element>
         </toc-element>
     </toc-element>
+    <toc-element topic="RuoYi-Vue3.md"/>
     <toc-element topic="Superset.md">
         <toc-element topic="superset-dev-env.md"/>
     </toc-element>
