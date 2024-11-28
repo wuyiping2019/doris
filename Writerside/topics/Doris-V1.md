@@ -1896,8 +1896,8 @@ select
     date_month,
     date_week,
     date_day,
-    date_hour,
-    date_point,
+    0 as date_hour,
+    0 as date_point,
     active
 from jdbc_hmsk_sjzt.bjcard_makeuse.dwd_channel_code_count_1d;
 ```
