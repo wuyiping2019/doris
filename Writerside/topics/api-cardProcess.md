@@ -1,21 +1,24 @@
 # api_cardProcess
 ## 1.1 入参
+
 ```json
 {
   "startTime": {
     "required": false,
     "type": "String",
-    "desc": "开始时间"
+    "desc": "开始时间",
+    "default": "2024-01-01"
   },
-  "endTime":{
+  "endTime": {
     "required": false,
     "type": "String",
-    "desc": "结束时间"
+    "desc": "结束时间",
+    "default": "curdate()"
   },
   "cardStatus": {
     "required": false,
     "type": "Integer",
-    "desc": "制卡状态 申领7-5 单位经办人提交8 申请撤销9-22 制卡成功11-75 制卡失败12-70 开户失败13-30 照片审核失败14-115 130"
+    "desc": "制卡状态 申领7-5 单位经办人提交8 申请撤销9-22 制卡成功11-75 制卡失败12-70 开户失败13-30 照片审核失败14-115 130  待单位提交-1"
   },
   "channelCodeList": {
     "required": false,
@@ -49,7 +52,6 @@
     "type": "String",
     "desc": "员工工号"
   }
-  
 }
 ```
 ## 1.2 SQL逻辑
@@ -177,38 +179,38 @@ SELECT
     ifnull(a.dataStatus, '-1') as dataStatus -- 来源卡管可能为空
 FROM temp a
 WHERE r1 = 1
-<if test="cardStatus!= null and ''!= cardStatus and cardStatus == -1">
+<if test="cardStatus!= null and cardStatus == -1">
     -- 待单位提交
     -- 1.数据还没有到卡管
     -- 2.小程序的action_type = 6
     and a.dataStatus is null and a.action_type = 6
 </if>
-<if test="cardStatus!= null and ''!= cardStatus and cardStatus == 7">
+<if test="cardStatus!= null and cardStatus == 7">
     -- 申领完成 5
     and a.dataStatus = 5
 </if>
-<if test="cardStatus!= null and ''!= cardStatus and cardStatus == 8">
+<if test="cardStatus!= null and cardStatus == 8">
     -- 申领完成5 applyType2单位申请
     -- 表达的含义 单位申领完成
     and a.dataStatus = 5 AND a.applyType = 2
 </if>
-<if test="cardStatus!= null and ''!= cardStatus and cardStatus == 9">
+<if test="cardStatus!= null and cardStatus == 9">
     -- 已撤销22
     and a.dataStatus = 22
 </if>
-<if test="cardStatus!= null and ''!= cardStatus and cardStatus == 11">
+<if test="cardStatus!= null and cardStatus == 11">
     -- 制卡成功75
     and a.dataStatus = 75
 </if>
-<if test="cardStatus!= null and ''!= cardStatus and cardStatus == 12">
+<if test="cardStatus!= null and cardStatus == 12">
     -- 制卡失败70
     and a.dataStatus = 70
 </if>
-<if test="cardStatus!= null and ''!= cardStatus and cardStatus == 13">
+<if test="cardStatus!= null and cardStatus == 13">
     -- 开户失败30
     and a.dataStatus = 30
 </if>
-<if test="cardStatus!= null and ''!= cardStatus and cardStatus == 14">
+<if test="cardStatus!= null and cardStatus == 14">
     -- 证照审核失败115 证照复核失败130
     and a.dataStatus in (115,130)
 </if>
