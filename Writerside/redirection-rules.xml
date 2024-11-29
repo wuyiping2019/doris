@@ -22,4 +22,8 @@
         <description>Created after removal of "部署" from doris</description>
         <accepts>deploy.html</accepts>
     </rule>
+    <rule id="166e2842">
+        <description>Created after removal of "元数据" from doris</description>
+        <accepts>元数据.html</accepts>
+    </rule>
 </rules>
