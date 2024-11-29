@@ -39,7 +39,15 @@
     </toc-element>
     <toc-element topic="test.md">
         <toc-element topic="metadata-mark.md"/>
-        <toc-element topic="bi_data_search.md"/>
+        <toc-element topic="bi_data_search.md">
+            <toc-element topic="api-cardProcess.md"/>
+            <toc-element topic="api-employeeRanking.md"/>
+            <toc-element topic="api-departmentStatistics.md"/>
+            <toc-element topic="api-lineStatistics.md"/>
+            <toc-element topic="api-totalStatistics.md"/>
+            <toc-element topic="api-dimensionStatistics.md"/>
+            <toc-element topic="api-listStatistics.md"/>
+        </toc-element>
         <toc-element topic="channel_code_statistics.md">
             <toc-element topic="dimensionStatistics.md"/>
             <toc-element topic="lineStatistics.md"/>
