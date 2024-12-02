@@ -254,37 +254,37 @@ SELECT
     ifnull(a.employee_number,b.employee_number) as employeeNumber,
     ifnull(a.employee_name,b.employee_name) as employeeName,
     <!-- 首次访问数目 -->
-    a.scfw,
+    ifnull(a.scfw,0) as scfw,
     <!-- 访问数目 -->
-    a.fw,
+    ifnull(a.fw,0) as fw,
     <!-- 短信验证码注册数目 -->
-    a.dxzc,
+    ifnull(a.dxzc,0) as dxzc,
     <!-- 微信手机号注册数目 -->
-    a.wxzc,
+    ifnull(a.wxzc,0) as wxzc,
     <!-- 实名认证数目 -->
-    a.smrz,
+    ifnull(a.smrz,0) as smrz,
     <!-- 单位申请提交数目 -->
-    a.dwsqtj,
+    ifnull(a.dwsqtj,0) as dwsqtj,
     <!-- 个人申请提交数目 -->
-    a.grsqtj,
+    ifnull(a.grsqtj,0) as grsqtj,
     <!-- 代办申请提交数目 -->
-    a.dbsqtj,
+    ifnull(a.dbsqtj,0) as dbsqtj,
     <!-- 撤销数目 -->
-    a.cx,
+    ifnull(a.cx,0) as cx,
     <!-- 启用数目 -->
-    a.qy,
+    ifnull(a.qy,0) as qy,
     <!-- 制卡成功 -->
-    a.zkcg,
+    ifnull(a.zkcg,0) as zkcg,
     <!-- 制卡失败 -->
-    a.zksb,
+    ifnull(a.zksb,0) as zksb,
     <!-- 开户成功 -->
-    a.khsb,
+    ifnull(a.khsb,0) as khsb,
     <!-- 照片审核失败 -->
-    a.zpshsb,
+    ifnull(a.zpshsb,0) as zpshsb,
     <!-- 注销 -->
-    a.zx,
+    ifnull(a.zx,0) as zx,
     <!-- 单位经办人提交 -->
-    a.dwjbrtj,
+    ifnull(a.dwjbrtj,0) as dwjbrtj,
     year(a.date_total) as dateYear,
     month(a.date_total) as dateMonth,
     weekday(a.date_total) + 1 as dateWeek,
