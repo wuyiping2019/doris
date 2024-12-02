@@ -1985,14 +1985,6 @@ SELECT
     -- select weekday('2024-11-29'); -- 周五 4
     -- select weekday('2024-11-30'); -- 周六 5
     -- select weekday('2024-12-01'); -- 周天 6
-    -- case when WEEKDAY(DATE_SUB(CURDATE(), INTERVAL 1 DAY)) = 0 then 7
-    --      when WEEKDAY(DATE_SUB(CURDATE(), INTERVAL 1 DAY)) = 1 then 1
-    --      when WEEKDAY(DATE_SUB(CURDATE(), INTERVAL 1 DAY)) = 2 then 2
-    --      when WEEKDAY(DATE_SUB(CURDATE(), INTERVAL 1 DAY)) = 3 then 3
-    --      when WEEKDAY(DATE_SUB(CURDATE(), INTERVAL 1 DAY)) = 4 then 4
-    --      when WEEKDAY(DATE_SUB(CURDATE(), INTERVAL 1 DAY)) = 5 then 5
-    --      when WEEKDAY(DATE_SUB(CURDATE(), INTERVAL 1 DAY)) = 6 then 6
-    -- end date_week,
     WEEKDAY(DATE_SUB(CURDATE(), INTERVAL 1 DAY)) + 1 date_week,
     -- 昨天是几号
     DAY(DATE_SUB(CURDATE(), INTERVAL 1 DAY)) date_day,
