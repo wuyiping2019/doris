@@ -1978,13 +1978,13 @@ SELECT
     year(DATE_SUB(CURDATE(), INTERVAL 1 DAY)) date_year,
     -- 昨天的月份
     month(DATE_SUB(CURDATE(), INTERVAL 1 DAY)) date_month,
-    -- select weekday('2024-11-25'); -- 0
-    -- select weekday('2024-11-26'); -- 1
-    -- select weekday('2024-11-27'); -- 2
-    -- select weekday('2024-11-28'); -- 3
-    -- select weekday('2024-11-29'); -- 4
-    -- select weekday('2024-11-30'); -- 5
-    -- select weekday('2024-12-01'); -- 6
+    -- select weekday('2024-11-25'); -- 周一 0
+    -- select weekday('2024-11-26'); -- 周二 1
+    -- select weekday('2024-11-27'); -- 周三 2
+    -- select weekday('2024-11-28'); -- 周四 3
+    -- select weekday('2024-11-29'); -- 周五 4
+    -- select weekday('2024-11-30'); -- 周六 5
+    -- select weekday('2024-12-01'); -- 周天 6
     -- case when WEEKDAY(DATE_SUB(CURDATE(), INTERVAL 1 DAY)) = 0 then 7
     --      when WEEKDAY(DATE_SUB(CURDATE(), INTERVAL 1 DAY)) = 1 then 1
     --      when WEEKDAY(DATE_SUB(CURDATE(), INTERVAL 1 DAY)) = 2 then 2
@@ -1993,9 +1993,7 @@ SELECT
     --      when WEEKDAY(DATE_SUB(CURDATE(), INTERVAL 1 DAY)) = 5 then 5
     --      when WEEKDAY(DATE_SUB(CURDATE(), INTERVAL 1 DAY)) = 6 then 6
     -- end date_week,
-    -- WEEKDAY(DATE_SUB(CURDATE(), INTERVAL 1 DAY)) date_week,
-    -- 昨天是当前月的第几周
-    CEIL((DAYOFMONTH(CURDATE() - INTERVAL 1 DAY) + WEEKDAY(DATE_FORMAT(CURDATE(), '%Y-%m-01'))) / 7) AS date_week
+    WEEKDAY(DATE_SUB(CURDATE(), INTERVAL 1 DAY)) + 1 date_week,
     -- 昨天是几号
     DAY(DATE_SUB(CURDATE(), INTERVAL 1 DAY)) date_day,
     -- 由于CURDATE()取的是Date类型 小时和分钟都是0

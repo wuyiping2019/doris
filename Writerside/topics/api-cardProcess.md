@@ -1,4 +1,7 @@
 # api_cardProcess
+
+查询用户最新卡状态及其渠道码关联信息。
+
 ## 1.1 入参
 
 ```json
@@ -54,7 +57,147 @@
   }
 }
 ```
-## 1.2 SQL逻辑
+
+## 1.2 响应
+
+```JSON
+{
+  "code": {
+    "type": "Integer",
+    "desc": "响应状态码，200 表示成功，其他值表示错误"
+  },
+  "message": {
+    "type": "String",
+    "desc": "响应结果描述，例如操作成功或错误提示"
+  },
+  "data": {
+    "type": "Object",
+    "desc": "业务数据",
+    "properties": {
+      "list": {
+        "type": "List<Object>",
+        "desc": "记录列表",
+        "items": {
+          "applyType": {
+            "type": "String",
+            "desc": "申请类型，例如 '单位申请'"
+          },
+          "employeeName": {
+            "type": "String",
+            "desc": "员工姓名"
+          },
+          "bankBranchCode": {
+            "type": "String",
+            "desc": "银行网点代码"
+          },
+          "idType": {
+            "type": "String",
+            "desc": "证件类型，例如 '1' 表示身份证"
+          },
+          "uname": {
+            "type": "String",
+            "desc": "用户名字（部分脱敏）"
+          },
+          "bankAgreeFlag": {
+            "type": "String",
+            "desc": "银行同意标识，'1' 表示同意"
+          },
+          "syncFlag": {
+            "type": "String",
+            "desc": "同步标识，'1' 表示已同步"
+          },
+          "bankBranchName": {
+            "type": "String",
+            "desc": "银行网点名称"
+          },
+          "active": {
+            "type": "Integer",
+            "desc": "激活状态，1 表示激活"
+          },
+          "dataStatus": {
+            "type": "String",
+            "desc": "卡状态包含申领过程，例如 '待单位提交'"
+          },
+          "cardUpdateTime": {
+            "type": "String",
+            "desc": "卡状态更新时间，格式为 yyyy-MM-dd HH:mm:ss"
+          },
+          "idNo": {
+            "type": "String",
+            "desc": "证件号码（部分脱敏）"
+          },
+          "employeeCode": {
+            "type": "String",
+            "desc": "员工代码，唯一标识"
+          },
+          "employeeNumber": {
+            "type": "String",
+            "desc": "员工工号"
+          },
+          "uid": {
+            "type": "String",
+            "desc": "用户唯一标识"
+          },
+          "actionType": {
+            "type": "String",
+            "desc": "埋点代码，例如 '6'表示单位申领"
+          },
+          "userCalcId": {
+            "type": "String",
+            "desc": "用户计算ID，三要素"
+          },
+          "usci": {
+            "type": "String",
+            "desc": "统一社会信用代码（部分脱敏）"
+          },
+          "phone": {
+            "type": "String",
+            "desc": "用户手机号（部分脱敏）"
+          },
+          "createTime": {
+            "type": "String",
+            "desc": "创建时间，格式为 yyyy-MM-dd HH:mm:ss"
+          },
+          "bankNo": {
+            "type": "String",
+            "desc": "银行编号"
+          },
+          "id": {
+            "type": "String",
+            "desc": "记录 ID"
+          },
+          "channelCode": {
+            "type": "String",
+            "desc": "渠道代码"
+          }
+        }
+      },
+      "pagination": {
+        "type": "Object",
+        "desc": "分页信息",
+        "properties": {
+          "total": {
+            "type": "String",
+            "desc": "符合条件的记录总数"
+          },
+          "pageSize": {
+            "type": "Integer",
+            "desc": "每页记录数"
+          },
+          "current": {
+            "type": "Integer",
+            "desc": "当前页码"
+          }
+        }
+      }
+    }
+  }
+}
+
+```
+
+## 1.3 SQL逻辑
+
 ```SQL
 WITH temp AS (
     SELECT

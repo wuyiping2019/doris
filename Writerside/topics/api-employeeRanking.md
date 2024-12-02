@@ -1,6 +1,78 @@
 # api_employeeRanking
 
-## 1.1 SQL逻辑
+查询指定银行或一个班或多个网点下的员工前20名提交卡申请次数的员工信息。
+
+## 1.1 入参
+```JSON
+{
+  "startTime": {
+    "type": "String",
+    "desc": "开始时间，格式为 yyyy-MM-ddTHH:mm:ss",
+    "required": false
+  },
+  "endTime": {
+    "type": "String",
+    "desc": "结束时间，格式为 yyyy-MM-ddTHH:mm:ss",
+    "required": false
+  },
+  "bankNo": {
+    "type": "String",
+    "desc": "银行编码，不能为空",
+    "required": true
+  },
+  "bankBranchList": {
+    "type": "List<String>",
+    "desc": "银行网点编码集合，不能为空",
+    "required": true
+  }
+}
+
+```
+## 1.2 响应
+```JSON
+{
+  "code": {
+    "type": "Integer",
+    "desc": "响应状态码，200 表示成功，其他值表示错误"
+  },
+  "message": {
+    "type": "String",
+    "desc": "响应结果描述，例如操作成功或错误提示"
+  },
+  "data": {
+    "type": "List<Object>",
+    "desc": "业务数据列表，每个对象表示一个员工记录",
+    "items": {
+      "bankBranchCode": {
+        "type": "String",
+        "desc": "银行网点代码"
+      },
+      "bankBranchName": {
+        "type": "String",
+        "desc": "银行网点名称"
+      },
+      "employeeCode": {
+        "type": "String",
+        "desc": "员工代码，用于唯一标识员工记录"
+      },
+      "employeeNumber": {
+        "type": "String",
+        "desc": "员工工号"
+      },
+      "employeeName": {
+        "type": "String",
+        "desc": "员工姓名"
+      },
+      "sqtj": {
+        "type": "Integer",
+        "desc": "申请提交次数"
+      }
+    }
+  }
+}
+```
+
+## 1.3 SQL逻辑
 
 ```SQL
 with temp as (
