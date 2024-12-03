@@ -2,6 +2,12 @@
 
 ## 1.分层
 将数仓分为ods、dwd、ads和dws四层。
+```SQL
+create database if not exists ods;
+create database if not exists dwd;
+create database if not exists ads;
+create database if not exists dws;
+```
 ### 1.1 ODS（Operational Data Store，操作数据存储层）
 功能：存储从各种业务系统抽取的原始数据，通常是历史数据和实时数据的结合。ODS 作为数据仓库的基础层，旨在提供一个集中的、规范化的数据存储。
 特点： 数据通常未经过太多处理，保持原始状态。
@@ -9,7 +15,7 @@
 数据抽取通常是 ETL（抽取、转换、加载）过程的第一步。 。
 ### 1.2 DWD（Data Warehouse Detail，明细数据层）
 
-功能：对 ODS 层的数据进行清洗、转换、去重和规范化处理，生成详细的历史数据。
+功能：对 ODS **层的数据进行清洗**、转换、去重和规范化处理，生成详细的历史数据。
 
 DWD 层中的数据通常是经过加工的，可以为后续的分析和报告提供数据支持。
 
