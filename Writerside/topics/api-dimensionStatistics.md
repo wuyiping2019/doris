@@ -1,41 +1,110 @@
 # api_dimensionStatistics
+## 1.1 入参
+```JSON
+{
+  "year": {
+    "type": "Integer",
+    "desc": "年份，默认为 0 表示不限制年份",
+    "required": false
+  },
+  "month": {
+    "type": "Integer",
+    "desc": "月份，默认为 0 表示不限制月份",
+    "required": false
+  },
+  "week": {
+    "type": "Integer",
+    "desc": "周次，默认为 0 表示不限制周次",
+    "required": false
+  },
+  "day": {
+    "type": "Integer",
+    "desc": "天数，默认为 0 表示不限制具体日期",
+    "required": false
+  },
+  "bankNo": {
+    "type": "String",
+    "desc": "银行编码，用于指定银行的过滤条件",
+    "required": false
+  },
+  "bankBranchNo": {
+    "type": "String",
+    "desc": "银行网点编码，用于指定银行网点的过滤条件",
+    "required": false
+  },
+  "employeeCode": {
+    "type": "String",
+    "desc": "员工编码，用于唯一标识员工",
+    "required": false
+  },
+  "employeeNumber": {
+    "type": "String",
+    "desc": "员工工号，用于唯一标识员工的工号",
+    "required": false
+  },
+  "channelCode": {
+    "type": "String",
+    "desc": "渠道码，用于指定渠道的过滤条件",
+    "required": false
+  }
+}
 
-## 1.1 SQL逻辑
+```
+## 1.2 响应
+```JSON
+
+```
+## 1.3 SQL逻辑
 ```SQL
 SELECT
-    SUM(scfw) AS scfw, -- 首次访问数目
-    SUM(fw) AS fw, -- 访问数目
-    SUM(dxzc) AS dxzc, -- 短信验证码注册数目
-    SUM(wxzc) AS wxzc, -- 微信手机号注册数目
-    SUM(smrz) AS smrz, -- 实名认证数目
-    SUM(dwsqtj) AS dwsqtj, -- 单位申请提交数目
-    SUM(grsqtj) AS grsqtj, -- 个人申请提交数目
-    SUM(dbsqtj) AS dbsqtj, -- 代办申请提交数目
-    SUM(cx) AS cx, -- 撤销数目
-    SUM(qy) AS qy, -- 启用数目
-    SUM(zkcg) AS zkcg, -- 制卡成功
-    SUM(zksb) AS zksb, -- 制卡失败
-    SUM(khsb) AS khsb, -- 开户失败
-    SUM(zpshsb) AS zpshsb, -- 照片审核失败
-    SUM(zx) AS zx -- 注销
+    <!-- 首次访问数目 -->
+    ifnull(SUM(scfw),0) AS scfw,
+    <!-- 访问数目 -->
+    ifnull(SUM(fw),0) AS fw,
+    <!-- 短信验证码注册数目 -->
+    ifnull(SUM(dxzc),0) AS dxzc,
+    <!-- 微信手机号注册数目 -->
+    ifnull(SUM(wxzc),0) AS wxzc,
+    <!-- 实名认证数目 -->
+    ifnull(SUM(smrz),0) AS smrz,
+    <!-- 单位申请提交数目 -->
+    ifnull(SUM(dwsqtj),0) AS dwsqtj,
+    <!-- 个人申请提交数目 -->
+    ifnull(SUM(grsqtj),0) AS grsqtj,
+    <!-- 代办申请提交数目 -->
+    ifnull(SUM(dbsqtj),0) AS dbsqtj,
+    <!-- 撤销数目 -->
+    ifnull(SUM(cx),0) AS cx,
+    <!-- 启用数目 -->
+    ifnull(SUM(qy),0) AS qy,
+    <!-- 制卡成功数目 -->
+    ifnull(SUM(zkcg),0) AS zkcg,
+    <!-- 制卡失败数目 -->
+    ifnull(SUM(zksb),0) AS zksb,
+    <!-- 开户失败数目 -->
+    ifnull(SUM(khsb),0) AS khsb,
+    <!-- 照片审核失败数目 -->
+    ifnull(SUM(zpshsb),0) AS zpshsb,
+    <!-- 销户数目 -->
+    ifnull(SUM(zx),0) AS zx
 FROM dwd.dwd_channel_code_count_1d
 <where>
      1=1
     <if test="year != null and  year != 0">
         -- 查询指定年
-        AND date_year = #{year}
+        AND year(date_total) = #{year}
     </if>
     <if test="month != null and month != 0">
         -- 查询指定月份
-        AND date_month = #{month}
+        AND month(date_total) = #{month}
     </if>
     <if test="week != null and week != 0">
         -- 查询指定周 一个月份所在的第几周
-        AND date_week = #{week}
+        AND weekday(date_total) + 1 = #{week}
     </if>
     <if test="day != null and day != 0">
         -- 查询几号
-        AND date_day = #{day}
+        AND day(date_total) = #{day}
     </if>
     <if test="channelCode != null and channelCode != ''">
         -- 查询指定渠道
